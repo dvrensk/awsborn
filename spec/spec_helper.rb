@@ -4,6 +4,11 @@ require 'awsborn'
 require 'spec'
 require 'spec/autorun'
 
+require 'rubygems'
+require 'webmock/rspec'
+include WebMock
+WebMock.disable_net_connect!
+
 Spec::Runner.configure do |config|
   
 end

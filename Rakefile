@@ -5,12 +5,14 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "awsborn"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
-    gem.email = "david@vrensk.com"
-    gem.homepage = "http://github.com/dvrensk/awsborn"
+    gem.summary = %Q{Set up Amazon AWS EC2 instances and deploy your apps}
+    gem.description = %Q{AWSborn creates EC2 instances and deploys your applications with chef-solo and capistrano.}
+    gem.email = "david@icehouse.se"
+    gem.homepage = "http://github.com/icehouse/awsborn"
     gem.authors = ["David Vrensk"]
     gem.add_development_dependency "rspec", ">= 1.2.9"
+    gem.add_dependency "right_aws", ">= 1.10.0"
+    gem.add_development_dependency "webmock", ">= 0.9.1"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new

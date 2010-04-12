@@ -14,4 +14,4 @@ Description goes here.
 
 == Copyright
 
-Copyright (c) 2010 David Vrensk. See LICENSE for details.
+Copyright (c) 2010 ICE House & David Vrensk. See LICENSE for details.
