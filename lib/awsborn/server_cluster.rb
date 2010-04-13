@@ -57,7 +57,7 @@ module Awsborn
     protected
     
     def add_domain_to_ip (hash)
-      if @domain && hash.has_key?(:ip)
+      if @domain && hash.has_key?(:ip) && ! hash[:ip].include?('.')
         ip = [hash[:ip], @domain].join('.')
         hash.merge(:ip => ip)
       else

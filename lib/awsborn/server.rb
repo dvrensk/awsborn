@@ -55,12 +55,14 @@ module Awsborn
       launch_instance(key_pair)
 
       update_known_hosts
-      install_ssh_keys(key_pair)
+      install_ssh_keys(key_pair) if keys
 
-      associate_address
-      update_known_hosts
+      if elastic_ip
+        associate_address
+        update_known_hosts
+      end
 
-      bootstrap
+      bootstrap if bootstrap_script
       attach_volumes
     end
 
@@ -82,12 +84,14 @@ module Awsborn
     end
     
     def install_ssh_keys (temp_key_pair)
-      cmd = "ssh -i #{temp_key_pair.path} #{sudo_user}@#{aws_dns_name} 'cat > .ssh/authorized_keys'"
+      cmd = "ssh -i #{temp_key_pair.path} #{sudo_user || 'root'}@#{aws_dns_name} 'cat > .ssh/authorized_keys'"
       logger.debug cmd
       IO.popen(cmd, "w") do |pipe|
         pipe.puts key_data
       end
-      system("ssh #{sudo_user}@#{aws_dns_name} 'sudo cp .ssh/authorized_keys /root/.ssh/authorized_keys'")
+      if sudo_user
+        system("ssh #{sudo_user}@#{aws_dns_name} 'sudo cp .ssh/authorized_keys /root/.ssh/authorized_keys'")
+      end
     end
 
     def key_data
@@ -106,12 +110,10 @@ module Awsborn
     end
 
     def bootstrap
-      if bootstrap_script
-        script = path_relative_to_script(bootstrap_script)
-        basename = File.basename(script)
-        system "scp #{script} root@#{elastic_ip}:/tmp"
-        system "ssh root@#{elastic_ip} 'cd /tmp && chmod 700 #{basename} && ./#{basename}'"
-      end
+      script = path_relative_to_script(bootstrap_script)
+      basename = File.basename(script)
+      system "scp #{script} root@#{elastic_ip}:/tmp"
+      system "ssh root@#{elastic_ip} 'cd /tmp && chmod 700 #{basename} && ./#{basename}'"
     end
     
     def attach_volumes

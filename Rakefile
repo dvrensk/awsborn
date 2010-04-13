@@ -5,8 +5,8 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "awsborn"
-    gem.summary = %Q{Set up Amazon AWS EC2 instances and deploy your apps}
-    gem.description = %Q{AWSborn creates EC2 instances and deploys your applications with chef-solo and capistrano.}
+    gem.summary = %Q{Awsborn lets you define and launch a server cluster on Amazon EC2.}
+    gem.description = %Q{Awsborn defines servers as instances with a certain disk volume, which makes it easy to restart missing servers.}
     gem.email = "david@icehouse.se"
     gem.homepage = "http://github.com/icehouse/awsborn"
     gem.authors = ["David Vrensk"]

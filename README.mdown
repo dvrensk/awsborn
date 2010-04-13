@@ -1,0 +1,204 @@
+# awsborn
+
+This Gem lets you define and launch a server cluster on Amazon EC2.
+The `launch` operation is idempotent, i.e., it only launches instances
+that are not running.
+
+## Installation
+
+    gem install awsborn
+
+## Synopsis
+
+    #! /usr/bin/env ruby
+
+    require 'rubygems'
+    require 'awsborn'
+
+    # If not set, will be picked up from ENV['AMAZON_ACCESS_KEY_ID']
+    # and ENV['AMAZON_SECRET_ACCESS_KEY'].
+    Awsborn.access_key_id = 'AAAAAAAAAAAA'
+    Awsborn.secret_access_key = 'KKKKKKKKKKKK'
+
+    # Logs to `awsborn.log` in current dir with level INFO by default.
+    # To suppress logging, do `Awsborn.logger = Logger.new('/dev/null')`
+    Awsborn.logger.level = Logger::DEBUG
+
+    class LogServer < Awsborn::Server
+      instance_type    :m1_small
+      image_id         'ami-2fc2e95b', :sudo_user => 'ubuntu'
+      security_group   'Basic web'
+      keys             'keys/*.pub'
+      bootstrap_script 'chef-bootstrap.sh'
+    end
+
+    log_servers = LogServer.cluster do
+      domain 'releware.net'
+      server :log_a, :zone => :eu_west_1a, :disk => {:sdf => "vol-a857b8c1"}, :ip => 'log-a'
+      server :log_b, :zone => :eu_west_1b, :disk => {:sdf => "vol-aa57b8c3"}, :ip => 'log-b'
+    end
+
+    log_servers.launch
+
+    log_servers.each do |server|
+      system "rake cook server=#{server.host_name}"
+    end
+
+## How it works
+
+It's really simple:
+
+1. Define a server type (`LogServer` in the example above).
+2. Define a cluster of server instances.
+3. Launch the cluster.
+
+See *Launching a cluster* below for details.
+
+### Defining a server type
+
+Server types can be named anything but must inherit from `Awsborn::Server`.
+Servers take five different directives:
+
+* `instance_type` -- a symbol.  One of `:m1_small`, `:m1_large`, `:m1_xlarge`,
+  `:m2_2xlarge`, `:m2_4xlarge`, `:c1_medium`, and `:c1_xlarge`.
+* `image_id` -- a valid EC2 AMI.  Specify `:sudo_user` as an option if the AMI
+  does not allow you to log in as root.
+* `security_group` -- a security group that you own.
+* `keys` -- one or more globs to public ssh keys.  When the servers are running,
+  `root` will be able to log in using any one of these keys.
+* `bootstrap_script` -- path to a script which will be run on each instance as
+  soon as it is started.  Use it to bootstrap `chef` and let `chef` take it from
+  there.  A sample bootstrap script is included towards the end of this document.
+
+A server cannot be started without `instance_type`, `image_id` and `security_group`.
+The don't have to be defined for the server type though, but can
+equally well be added as options to the specific servers.
+
+### Defining a cluster
+
+The `cluster` method accepts two commands, `domain` and `server`.  `domain` is
+optional and is just a way to avoid repetition in the `server` commands.  `server`
+takes a name (which can be used as a key in the cluster, e.g. `log_servers[:log_a]`)
+and a hash:
+
+Mandatory keys:
+
+* `:zone` -- the availability zone for the server.  One of `:us_east_1a`, `:us_east_1b`,
+  `:us_east_1c`, `:us_west_1a`, `:us_west_1b`, `:eu_west_1a`, `:eu_west_1b`.
+* `:disk` -- a hash of `device => volume-id`.  Awsborn uses the disks to tell if a server
+  is running or not (see *Launching a cluster*).
+* `:ip` -- a domain name which translates to an elastic ip.  If the domain name does not
+  contain a full stop (dot) and `domain` has been specified above, the domain is added.
+
+Keys that override server type settings:
+
+* `:instance_type`
+* `:sudo_user`
+* `:security_group`
+* `:keys`
+* `:bootstrap_script`
+
+### Launching a cluster
+
+The `launch` method on the cluster checks to see if each server is running by checking
+if *one of the server's disks is attached to an EC2 instance*, i.e., the server is
+defined by its content, not by its AMI or ip address.
+
+Servers that not running are started by calling the `start` method on the server,
+which does the following:
+
+    def start (key_pair)
+      launch_instance(key_pair)
+
+      update_known_hosts
+      install_ssh_keys(key_pair) if keys
+
+      if elastic_ip
+        associate_address
+        update_known_hosts
+      end
+
+      bootstrap if bootstrap_script
+      attach_volumes
+    end
+
+The `key_pair` is a temporary key pair that is used only for launching this cluster.
+In case of a failed launch, the private key is available as `/tmp/temp_key_*`.
+
+## A bootstrapping script
+
+This is what we use with the AMI above:
+
+    #!/bin/bash
+
+    echo '------------------'
+    echo 'Bootstrapping Chef'
+    echo
+
+    aptitude -y update
+    aptitude -y install gcc g++ curl build-essential \
+      libxml-ruby libxml2-dev \
+      ruby irb ri rdoc ruby1.8-dev libzlib-ruby libyaml-ruby libreadline-ruby \
+      libruby libruby-extras libopenssl-ruby \
+      libdbm-ruby libdbi-ruby libdbd-sqlite3-ruby \
+      sqlite3 libsqlite3-dev libsqlite3-ruby
+
+    curl -L 'http://rubyforge.org/frs/download.php/69365/rubygems-1.3.6.tgz' | tar zxf -
+    cd rubygems* && ruby setup.rb --no-ri --no-rdoc
+
+    ln -sfv /usr/bin/gem1.8 /usr/bin/gem
+
+    gem install chef ohai --no-ri --no-rdoc --source http://gems.opscode.com --source http://gems.rubyforge.org
+
+    echo
+    echo 'Bootstrapping Chef - done'
+    echo '-------------------------'
+
+## Bugs and surprising features
+
+No bugs are known at this time.
+
+If a server is defined with two disks and the disks are attached to different
+EC2 instances, the server will still be considered running.  If one disk is
+attached and the other isn't, one of these things will happen:
+
+* The server is considered to be running, *or*
+* The server is considered down and an attempt to start it will likely fail since
+  one disk is already attached to another instance.
+
+### Untested features
+
+* Launching without ssh keys.  (I suppose certain AMIs would support that.)
+* Running without elastic ip.
+
+## To do / Could do
+
+* Tests.
+* Add cloud watch
+* Dynamic discovery of instance types and availability zones.
+* Hack RightAws to verify certificates.
+* Elastic Load Balancing.
+* Launch servers in parallel.
+
+## Note on Patches/Pull Requests
+
+* Fork the project.
+* Make your feature addition or bug fix.
+* Add tests for it. This is important so I don't break it in a
+  future version unintentionally.
+* At the moment, the gem does not have any tests.  I intend to fix that,
+  and I won't accept patches without tests.
+* Commit, do not mess with rakefile, version, or history.
+  (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
+* Send me a pull request. Bonus points for topic branches.
+
+## History
+
+This gem is inspired by [Awsymandias](http://github.com/bguthrie/awsymandias)
+which was sort of what I needed but was too complicated to fix, partly because
+the documentation was out of date.  Big thanks for the inspiration and random
+code snippets.
+
+## Copyright
+
+Copyright (c) 2010 ICE House & David Vrensk. See LICENSE for details.
