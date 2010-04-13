@@ -18,8 +18,11 @@ module Awsborn
     def logger
       unless defined? @logger
         dir = [File.dirname(File.expand_path($0)), '/tmp'].find { |d| File.writable?(d) }
-        file = dir ? File.join(dir, 'awsborn.log') : $stdout
-        @logger = Logger.new(file)
+        if dir
+          file = File.open(File.join(dir, 'awsborn.log'), 'a')
+          file.sync = true
+        end
+        @logger = Logger.new(file || $stdout)
         @logger.level = Logger::INFO
       end
       @logger
@@ -27,6 +30,9 @@ module Awsborn
   
     # @throws Interrupt
     def wait_for (message, sleep_seconds = 5, max_wait_seconds = nil)
+      stdout_sync = $stdout.sync
+      $stdout.sync = true
+
       start_at = Time.now
       print "Waiting for #{message}.." if Awsborn.verbose
       result = yield
@@ -40,6 +46,8 @@ module Awsborn
       end
       verbose_output "OK!"
       result
+    ensure
+      $stdout.sync = stdout_sync
     end
   
     def verbose_output(message)

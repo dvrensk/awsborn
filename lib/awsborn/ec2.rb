@@ -1,7 +1,7 @@
 module Awsborn
   class Ec2
-    extend Forwardable
-    def_delegators :connection, :describe_volumes, :attach_volume
+
+    attr_accessor :instance_id
 
     def connection
       unless @connection
@@ -39,29 +39,49 @@ module Awsborn
       File.open file_path, "w", 0600 do |f|
         f.write key_data[:aws_material]
       end
-      pp key_data
       KeyPair.new key_name, file_path
     end
+
+    def delete_key_pair (key_pair)
+      connection.delete_key_pair(key_pair.name)
+    end
     
-    def associate_address (instance_id, address)
-      unless address.match(/^(\d{1,3}\.){3}\d{1,3}$/)
+    def volume_has_instance? (volume_id)
+      response = connection.describe_volumes(volume_id).first
+      if response[:aws_status] == 'in-use'
+        self.instance_id = response[:aws_instance_id]
+        true
+      else
+        false
+      end
+    end
+    
+    IP4_REGEXP = /^(\d{1,3}\.){3}\d{1,3}$/
+
+    def associate_address (address)
+      unless address.match(IP4_REGEXP)
         address = Resolv.getaddress address
       end
       connection.associate_address(instance_id, address)
     end
 
-    def describe_instance (id)
-      connection.describe_instances(id).first
+    def describe_instance
+      connection.describe_instances(instance_id).first
     end
 
     def launch_instance (*args)
-      connection.launch_instances(*args).first
+      response = connection.launch_instances(*args).first
+      self.instance_id = response[:aws_instance_id]
+      response
     end
     
-    def get_console_output (id)
-      output = connection.get_console_output(id)
+    def get_console_output
+      output = connection.get_console_output(instance_id)
       output[:aws_output]
     end
     
+    def attach_volume (volume, device)
+      connection.attach_volume(volume, instance_id, device)
+    end
   end
 end

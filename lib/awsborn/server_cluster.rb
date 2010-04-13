@@ -31,6 +31,7 @@ module Awsborn
       return if to_start.empty?
       generate_key_pair(to_start)
       to_start.each { |e| e.start(@key_pair) }
+      delete_key_pair(to_start)
     end
 
     def find_missing_instances
@@ -41,6 +42,10 @@ module Awsborn
       @key_pair = instances.first.ec2.generate_key_pair
     end
 
+    def delete_key_pair (instances)
+      instances.first.ec2.delete_key_pair(@key_pair)
+    end
+    
     def each (&block)
       @instances.each &block
     end
