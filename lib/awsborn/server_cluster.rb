@@ -23,19 +23,19 @@ module Awsborn
     end
 
     def launch
-      start_missing_instances
+      running, missing = @instances.partition { |e| e.running? }
+      refresh_running(running) if running.any?
+      start_missing_instances(missing) if missing.any?
     end
 
-    def start_missing_instances
-      to_start = find_missing_instances
-      return if to_start.empty?
-      generate_key_pair(to_start)
-      to_start.each { |e| e.start(@key_pair) }
-      delete_key_pair(to_start)
+    def refresh_running (instances)
+      instances.each { |e| e.refresh }
     end
 
-    def find_missing_instances
-      @instances.reject { |e| e.running? }
+    def start_missing_instances (instances)
+      generate_key_pair(instances)
+      instances.each { |e| e.start(@key_pair) }
+      delete_key_pair(instances)
     end
 
     def generate_key_pair (instances)

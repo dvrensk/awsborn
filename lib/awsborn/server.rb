@@ -36,6 +36,10 @@ module Awsborn
         @bootstrap_script = args.first unless args.empty?
         @bootstrap_script
       end
+      def monitor (*args)
+        @monitor = args.first unless args.empty?
+        @monitor
+      end
       
       def cluster (&block)
         ServerCluster.build self, &block
@@ -45,12 +49,37 @@ module Awsborn
       end
     end
 
-    def one_of_my_disks_is_attached_to_a_running_instance?
-      vol_id = disk.values.first
-      ec2.volume_has_instance?(vol_id)
+    def running?
+      map = {}
+      disk.values.each { |vol_id| map[vol_id] = ec2.instance_id_for_volume(vol_id) }
+      ids = map.values.uniq
+      if ids.size > 1
+        raise ServerError, "Volumes for #{self.class.name}:#{name} are connected to several instances: #{map.inspect}"
+      end
+      ec2.instance_id = ids.first
     end
-    alias :running? :one_of_my_disks_is_attached_to_a_running_instance?
 
+    def refresh
+      start_or_stop_monitoring unless monitor.nil?
+      associate_address if elastic_ip
+      
+      begin
+        update_known_hosts
+        install_ssh_keys if keys
+      rescue SecurityError => e
+        logger.warn "Could not update known_hosts for #{name}:"
+        logger.warn e
+      end
+    end
+    
+    def start_or_stop_monitoring
+      if monitor && ! ec2.monitoring?
+        ec2.monitor
+      elsif ec2.monitoring? && ! monitor
+        ec2.unmonitor
+      end
+    end
+    
     def start (key_pair)
       launch_instance(key_pair)
 
@@ -71,7 +100,8 @@ module Awsborn
         :instance_type => constant(instance_type),
         :availability_zone => constant(zone),
         :key_name => key_pair.name,
-        :group_ids => security_group
+        :group_ids => security_group,
+        :monitor_enabled => monitor
       )
       logger.debug @launch_response
 
@@ -83,33 +113,42 @@ module Awsborn
       KnownHostsUpdater.update_for_server self
     end
     
-    def install_ssh_keys (temp_key_pair)
-      cmd = "ssh -i #{temp_key_pair.path} #{sudo_user || 'root'}@#{aws_dns_name} 'cat > .ssh/authorized_keys'"
-      logger.debug cmd
-      IO.popen(cmd, "w") do |pipe|
-        pipe.puts key_data
-      end
-      if sudo_user
-        system("ssh #{sudo_user}@#{aws_dns_name} 'sudo cp .ssh/authorized_keys /root/.ssh/authorized_keys'")
-      end
+    def install_ssh_keys (temp_key_pair = nil)
+      logger.debug "Installing ssh keys on #{name}"
+      raise ArgumentError, "No host_name for #{name}" unless host_name
+      install_ssh_keys_for_sudo_user_or_root (temp_key_pair)
+      copy_sudo_users_keys_to_root if sudo_user
     end
 
+    def install_ssh_keys_for_sudo_user_or_root (temp_key_pair)
+      current_key = "-i #{temp_key_pair.path}" if temp_key_pair
+      IO.popen("ssh #{current_key} #{sudo_user || 'root'}@#{host_name} 'cat > .ssh/authorized_keys'", "w") do |pipe|
+        pipe.puts key_data
+      end
+    end
+    
     def key_data
       Dir[*keys].inject([]) do |memo, file_name|
         memo + File.readlines(file_name).map { |line| line.chomp }
       end.join("\n")
     end
 
+    def copy_sudo_users_keys_to_root
+      system("ssh #{sudo_user}@#{host_name} 'sudo cp .ssh/authorized_keys /root/.ssh/authorized_keys'")
+    end
+    
     def path_relative_to_script (path)
       File.join(File.dirname(File.expand_path($0)), path)
     end
     
     def associate_address
+      logger.debug "Associating address #{elastic_ip} to #{name}"
       ec2.associate_address(elastic_ip)
       self.host_name = elastic_ip
     end
 
     def bootstrap
+      logger.debug "Bootstrapping #{name}"
       script = path_relative_to_script(bootstrap_script)
       basename = File.basename(script)
       system "scp #{script} root@#{elastic_ip}:/tmp"
@@ -117,6 +156,7 @@ module Awsborn
     end
     
     def attach_volumes
+      logger.debug "Attaching volumes #{disk.values.join(', ')} to #{name}"
       disk.each_pair do |device, volume|
         device = "/dev/#{device}" if device.is_a?(Symbol) || ! device.match('/')
         res = ec2.attach_volume(volume, device)
@@ -129,6 +169,10 @@ module Awsborn
     
     begin :accessors
       attr_accessor :name, :host_name, :logger
+      def host_name= (string)
+        logger.debug "Setting host_name of #{name} to #{string}"
+        @host_name = string
+      end
       def zone
         @options[:zone]
       end
@@ -152,6 +196,9 @@ module Awsborn
       end
       def keys
         @options[:keys] || self.class.keys
+      end
+      def monitor
+        @options[:monitor] || self.class.monitor
       end
       def elastic_ip
         @options[:ip]

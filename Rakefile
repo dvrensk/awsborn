@@ -10,7 +10,7 @@ begin
     gem.email = "david@icehouse.se"
     gem.homepage = "http://github.com/icehouse/awsborn"
     gem.authors = ["David Vrensk"]
-    gem.add_dependency "right_aws", ">= 1.10.0"
+    gem.add_dependency "icehouse-right_aws", ">= 1.11.0"
     gem.add_development_dependency "rspec", ">= 1.2.9"
     gem.add_development_dependency "webmock", ">= 0.9.1"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings

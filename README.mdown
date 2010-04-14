@@ -30,6 +30,7 @@ that are not running.
       security_group   'Basic web'
       keys             'keys/*.pub'
       bootstrap_script 'chef-bootstrap.sh'
+      monitor          true
     end
 
     log_servers = LogServer.cluster do
@@ -179,6 +180,9 @@ attached and the other isn't, one of these things will happen:
 * Hack RightAws to verify certificates.
 * Elastic Load Balancing.
 * Launch servers in parallel.
+* Make `image_id` a hash with different AMIs for different instance types.
+* Make `image_id` overridable per server.
+
 
 ## Note on Patches/Pull Requests
 

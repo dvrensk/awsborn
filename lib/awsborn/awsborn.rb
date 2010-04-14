@@ -1,12 +1,13 @@
 module Awsborn
   class SecurityError < StandardError ; end
+  class ServerError < StandardError ; end
 
   class << self
     attr_writer :access_key_id, :secret_access_key, :logger
     attr_accessor :verbose
-  
+
     Awsborn.verbose = true
-  
+
     def access_key_id
       @access_key_id ||= ENV['AMAZON_ACCESS_KEY_ID'] 
     end

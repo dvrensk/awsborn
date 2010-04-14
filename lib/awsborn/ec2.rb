@@ -1,6 +1,8 @@
 module Awsborn
   class Ec2
-
+    extend Forwardable
+    def_delegators :Awsborn, :logger
+    
     attr_accessor :instance_id
 
     def connection
@@ -45,17 +47,12 @@ module Awsborn
     def delete_key_pair (key_pair)
       connection.delete_key_pair(key_pair.name)
     end
-    
-    def volume_has_instance? (volume_id)
+
+    def instance_id_for_volume (volume_id)
       response = connection.describe_volumes(volume_id).first
-      if response[:aws_status] == 'in-use'
-        self.instance_id = response[:aws_instance_id]
-        true
-      else
-        false
-      end
+      response[:aws_status] == 'in-use' ? response[:aws_instance_id] : nil
     end
-    
+
     IP4_REGEXP = /^(\d{1,3}\.){3}\d{1,3}$/
 
     def associate_address (address)
@@ -83,5 +80,20 @@ module Awsborn
     def attach_volume (volume, device)
       connection.attach_volume(volume, instance_id, device)
     end
+
+    def monitoring?
+      %w[enabled pending].include?(describe_instance[:monitoring_state])
+    end
+    
+    def monitor
+      logger.debug "Activating monitoring for #{instance_id}"
+      connection.monitor_instances(instance_id)
+    end
+
+    def unmonitor
+      logger.debug "Deactivating monitoring for #{instance_id}"
+      connection.unmonitor_instances(instance_id)
+    end
+
   end
 end
