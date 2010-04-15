@@ -101,7 +101,7 @@ module Awsborn
         :availability_zone => constant(zone),
         :key_name => key_pair.name,
         :group_ids => security_group,
-        :monitor_enabled => monitor
+        :monitoring_enabled => monitor
       )
       logger.debug @launch_response
 
