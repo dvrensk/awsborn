@@ -102,7 +102,7 @@ Keys that override server type settings:
 ### Launching a cluster
 
 The `launch` method on the cluster checks to see if each server is running by checking
-if *one of the server's disks is attached to an EC2 instance*, i.e., the server is
+if the server's disks are attached to an EC2 instance, i.e., the server is
 defined by its content, not by its AMI or ip address.
 
 Servers that not running are started by calling the `start` method on the server,
@@ -159,14 +159,6 @@ This is what we use with the AMI above:
 
 No bugs are known at this time.
 
-If a server is defined with two disks and the disks are attached to different
-EC2 instances, the server will still be considered running.  If one disk is
-attached and the other isn't, one of these things will happen:
-
-* The server is considered to be running, *or*
-* The server is considered down and an attempt to start it will likely fail since
-  one disk is already attached to another instance.
-
 ### Untested features
 
 * Launching without ssh keys.  (I suppose certain AMIs would support that.)
@@ -175,7 +167,6 @@ attached and the other isn't, one of these things will happen:
 ## To do / Could do
 
 * Tests.
-* Add cloud watch
 * Dynamic discovery of instance types and availability zones.
 * Hack RightAws to verify certificates.
 * Elastic Load Balancing.
