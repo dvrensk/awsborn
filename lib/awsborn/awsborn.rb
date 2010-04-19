@@ -13,7 +13,23 @@ module Awsborn
     end
     
     def secret_access_key
-      @secret_access_key ||= ENV['AMAZON_SECRET_ACCESS_KEY']
+      unless @secret_access_key
+        @secret_access_key = ENV['AMAZON_SECRET_ACCESS_KEY']
+        if @secret_access_key.to_s == ''
+          @secret_access_key = secret_access_key_from_keychain(access_key_id)
+        end
+      end
+      @secret_access_key
+    end
+
+    def secret_access_key_from_keychain (key_id)
+      @credentials ||= {}
+      unless @credentials[key_id]
+        dump = `security -q find-generic-password -a "#{key_id}" -g 2>&1`
+        secret_key = dump[/password: "(.*)"/, 1]
+        @credentials[key_id] = secret_key
+      end
+      @credentials[key_id]
     end
 
     def remote_chef_path
