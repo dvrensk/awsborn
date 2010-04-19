@@ -16,8 +16,8 @@ that are not running.
     require 'awsborn'
 
     # If not set, will be picked up from ENV['AMAZON_ACCESS_KEY_ID']
-    # and ENV['AMAZON_SECRET_ACCESS_KEY'].
     Awsborn.access_key_id = 'AAAAAAAAAAAA'
+    # Can be picked up from ENV['AMAZON_SECRET_ACCESS_KEY'] or Keychain (OS X)
     Awsborn.secret_access_key = 'KKKKKKKKKKKK'
 
     # Logs to `awsborn.log` in current dir with level INFO by default.
@@ -154,6 +154,71 @@ This is what we use with the AMI above:
     echo
     echo 'Bootstrapping Chef - done'
     echo '-------------------------'
+
+## Running with Chef Solo
+
+Awsborn integrates with [Chef Solo](http://github.com/opscode/chef).  An example from reality:
+
+    Awsborn.access_key_id = 'AKIAJHL53MPX7LPCKIFQ'
+
+    class LogServer < Awsborn::Server
+      instance_type    :m1_small
+      image_id         'ami-2fc2e95b', :sudo_user => 'ubuntu'
+      security_group   'Basic web'
+      keys             '../keys/*'
+      bootstrap_script 'chef-bootstrap.sh'
+      monitor          true
+
+      cluster do
+        domain 'releware.net'
+        server :log_a, :zone => :eu_west_1a, :disk => {:sdf => "vol-a857b8c1"}, :ip => 'log-a'
+        server :log_b, :zone => :eu_west_1b, :disk => {:sdf => "vol-aa57b8c3"}, :ip => 'log-b'
+      end
+
+      def chef_dna
+        {
+          :user => "lumberjack",
+          :host => host_name,
+          :users =>  [
+            {
+              :username => "lumberjack",
+              :authorized_keys => key_data,
+              :gid => 1001,
+              :uid => 1001,
+              :sudo => true,
+            }
+          ],
+          :packages => %w[
+            vim
+            heirloom-mailx
+          ],
+          :gems => [
+            "rake"
+          ],
+          :ebs_volumes => [
+            {:device => "sdf", :path => "/apps"}
+          ],
+          :recipes => [
+            "packages",
+            "users",
+            "sudo",
+            "openssh",
+            "ec2-ebs",
+            "git",
+            "gems",
+          ]
+        }
+      end
+    end
+
+Just add a `Rakefile` in the same directory:
+
+    require 'awsborn'
+    include Awsborn::Chef::Rake
+    require './servers'
+
+You are now able to run `rake` to start all servers and run Chef on each of them.
+See `rake -T` for more options.
 
 ## Bugs and surprising features
 
