@@ -177,7 +177,7 @@ module Awsborn
     def upload_cookbooks
       logger.info "Uploading cookbooks to #{host_name}"
       File.open("config/dna.json", "w") { |f| f.write(chef_dna.to_json) }
-      sh "rsync -rl --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
+      sh "rsync -rL --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
     ensure
       File.delete("config/dna.json")
     end
