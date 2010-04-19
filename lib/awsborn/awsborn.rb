@@ -3,7 +3,7 @@ module Awsborn
   class ServerError < StandardError ; end
 
   class << self
-    attr_writer :access_key_id, :secret_access_key, :logger
+    attr_writer :access_key_id, :secret_access_key, :logger, :remote_chef_path
     attr_accessor :verbose
 
     Awsborn.verbose = true
@@ -14,6 +14,10 @@ module Awsborn
     
     def secret_access_key
       @secret_access_key ||= ENV['AMAZON_SECRET_ACCESS_KEY']
+    end
+
+    def remote_chef_path
+      @remote_chef_path ||= '/etc/chef'
     end
   
     def logger

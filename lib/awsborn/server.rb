@@ -8,7 +8,11 @@ module Awsborn
     end
     
     class << self
-      attr_accessor :logger
+      attr_accessor :logger, :children, :clusters
+      def inherited (klass)
+        @children ||= []
+        @children << klass
+      end
       def image_id (*args)
         unless args.empty?
           @image_id = args.first
@@ -42,7 +46,9 @@ module Awsborn
       end
       
       def cluster (&block)
-        ServerCluster.build self, &block
+        @clusters ||= []
+        @clusters << ServerCluster.build(self, &block)
+        @clusters.last
       end
       def logger
         @logger ||= Awsborn.logger
@@ -161,6 +167,25 @@ module Awsborn
         device = "/dev/#{device}" if device.is_a?(Symbol) || ! device.match('/')
         res = ec2.attach_volume(volume, device)
       end
+    end
+
+    def cook
+      upload_cookbooks
+      run_chef
+    end
+
+    def upload_cookbooks
+      logger.info "Uploading cookbooks to #{host_name}"
+      File.open("config/dna.json", "w") { |f| f.write(chef_dna.to_json) }
+      sh "rsync -rl --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
+    ensure
+      File.delete("config/dna.json")
+    end
+
+    def run_chef
+      logger.info "Running chef on #{host_name}"
+      # Absolute path to config files to avoid a nasty irrational bug.
+      sh "ssh root@#{host_name} \"cd #{Awsborn.remote_chef_path}; chef-solo -c #{Awsborn.remote_chef_path}/config/solo.rb -j #{Awsborn.remote_chef_path}/config/dna.json\""
     end
 
     def ec2
