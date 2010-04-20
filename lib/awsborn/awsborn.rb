@@ -32,6 +32,12 @@ module Awsborn
       @credentials[key_id]
     end
 
+    def secret_access_key_from_keychain! (key_id)
+      secret = secret_access_key_from_keychain key_id
+      raise "Could not find secret access key for #{key_id}" if secret.to_s == ''
+      secret
+    end
+    
     def remote_chef_path
       @remote_chef_path ||= '/etc/chef'
     end
