@@ -8,7 +8,7 @@ module Awsborn
       end
 
       desc "Start all servers (if needed) and deploy with chef"
-      task :default => [:start, :cook]
+      task :default => [:start, :chef]
 
       desc "Start all servers"
       task :start do
@@ -16,11 +16,12 @@ module Awsborn
       end
 
       desc "Run chef on all servers"
-      task :cook => [:check_syntax] do
+      task :chef => [:check_syntax] do
         default_cluster.each do |server|
           server.cook
         end
       end
+      task :cook => [:chef]
 
       desc "Check your cookbooks and config files for syntax errors"
       task :check_syntax do

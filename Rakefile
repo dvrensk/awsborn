@@ -12,6 +12,7 @@ begin
     gem.authors = ["David Vrensk"]
     gem.add_dependency "icehouse-right_aws", ">= 1.11.0"
     gem.add_dependency "json_pure", ">= 1.2.3"
+    gem.add_dependency "rake"
     gem.add_development_dependency "rspec", ">= 1.2.9"
     gem.add_development_dependency "webmock", ">= 0.9.1"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
