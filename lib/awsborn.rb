@@ -5,6 +5,7 @@ require 'tempfile'
 require 'rubygems'
 require 'right_aws'
 require 'json'
+require 'rake'
 
 # %w[
 #   awsborn
