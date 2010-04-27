@@ -142,11 +142,7 @@ module Awsborn
     def copy_sudo_users_keys_to_root
       system("ssh #{sudo_user}@#{host_name} 'sudo cp .ssh/authorized_keys /root/.ssh/authorized_keys'")
     end
-    
-    def path_relative_to_script (path)
-      File.join(File.dirname(File.expand_path($0)), path)
-    end
-    
+
     def associate_address
       logger.debug "Associating address #{elastic_ip} to #{name}"
       ec2.associate_address(elastic_ip)
@@ -155,7 +151,7 @@ module Awsborn
 
     def bootstrap
       logger.debug "Bootstrapping #{name}"
-      script = path_relative_to_script(bootstrap_script)
+      script = bootstrap_script
       basename = File.basename(script)
       system "scp #{script} root@#{elastic_ip}:/tmp"
       system "ssh root@#{elastic_ip} 'cd /tmp && chmod 700 #{basename} && ./#{basename}'"
