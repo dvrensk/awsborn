@@ -16,19 +16,23 @@ module Awsborn
       @unlocked = false
     end
 
-    def note (name)
+    def get (name)
       unlock
-      hex_dump = find_generic_password(name)
-      text = decode_hex(hex_dump)
-      text = string_content(text) if multi_encoded?(text)
+      password_line = find_generic_password(name)
+      if password_line.match(/^password: 0x/)
+        hex_dump = password_line[/password: 0x(\S+)/, 1]
+        text = decode_hex(hex_dump)
+        text = string_content(text) if multi_encoded?(text)
+      elsif password_line.match(/^password: "/)
+        text = password_line[/password: "(.+)"/, 1]
+      else
+        raise "Note '#{name}' not found in #{@keychain}"
+      end
       text
     end
 
     def find_generic_password (name)
-      dump = `security -q find-generic-password -s "#{name}" -g "#{@keychain}" 2>&1 1>/dev/null`
-      hex_dump = dump[/password: 0x(\S+)/, 1]
-      raise "Note '#{name}' not found in #{@keychain}" unless hex_dump
-      hex_dump
+      `security -q find-generic-password -s "#{name}" -g "#{@keychain}" 2>&1 1>/dev/null`
     end
 
     def decode_hex (hex_dump)
