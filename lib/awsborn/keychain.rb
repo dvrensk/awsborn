@@ -32,7 +32,8 @@ module Awsborn
     end
 
     def find_generic_password (name)
-      `security -q find-generic-password -s "#{name}" -g "#{@keychain}" 2>&1 1>/dev/null`
+      # -l for label, the editable field in a secure note (and 'name' for passwords)
+      `security -q find-generic-password -l "#{name}" -g "#{@keychain}" 2>&1 1>/dev/null`
     end
 
     def decode_hex (hex_dump)
