@@ -250,20 +250,24 @@ module Awsborn
     
     def constant (symbol)
       {
-        :us_east_1a => "us-east-1a",
-        :us_east_1b => "us-east-1b",
-        :us_east_1c => "us-east-1c",
-        :us_west_1a => "us-west-1a",
-        :us_west_1b => "us-west-1b",
-        :eu_west_1a => "eu-west-1a",
-        :eu_west_1b => "eu-west-1b",
-        :m1_small   => "m1.small",
-        :m1_large   => "m1.large" ,
-        :m1_xlarge  => "m1.xlarge",
-        :m2_2xlarge => "m2.2xlarge",
-        :m2_4xlarge => "m2.4xlarge",
-        :c1_medium  => "c1.medium",
-        :c1_xlarge  => "c1.xlarge"
+        :us_east_1a      => "us-east-1a",
+        :us_east_1b      => "us-east-1b",
+        :us_east_1c      => "us-east-1c",
+        :us_east_1d      => "us-east-1d",
+        :us_west_1a      => "us-west-1a",
+        :us_west_1b      => "us-west-1b",
+        :eu_west_1a      => "eu-west-1a",
+        :eu_west_1b      => "eu-west-1b",
+        :ap_southeast_1a => "ap-southeast-1a",
+        :ap_southeast_1b => "ap-southeast-1b",
+        :m1_small        => "m1.small",
+        :m1_large        => "m1.large" ,
+        :m1_xlarge       => "m1.xlarge",
+        :m2_xlarge       => "m2.xlarge",
+        :m2_2xlarge      => "m2.2xlarge",
+        :m2_4xlarge      => "m2.4xlarge",
+        :c1_medium       => "c1.medium",
+        :c1_xlarge       => "c1.xlarge"
       }[symbol]
     end
 
