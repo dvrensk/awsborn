@@ -10,6 +10,17 @@ describe Awsborn::Server do
   before(:each) do
     @server = SampleServer.new :sample, :zone => :eu_west_1a, :disk => {:sdf => "vol-aaaaaaaa"}
   end
+
+  context "constants" do
+    it "should look up an availability zone" do
+      @server.constant(:eu_west_1a).should == "eu-west-1a"
+    end
+    it "should look up an instance type" do
+      @server.constant(:m1_large).should == "m1.large"
+    end
+  end
+
+  # TODO
   context "first of all" do
     it "should have a connection to the EU service point"
     

@@ -247,28 +247,18 @@ module Awsborn
         @describe_instance ||= ec2.describe_instance
       end
     end
-    
+
+    AVAILABILITY_ZONES = %w[
+      us-east-1a us-east-1b us-east-1c us-east-1d
+      us-west-1a us-west-1b
+      eu-west-1a eu-west-1b
+      ap-southeast-1a ap-southeast-1b
+    ]
+    INSTANCE_TYPES = %w[m1.small m1.large m1.xlarge m2.xlarge m2.2xlarge m2.4xlarge c1.medium c1.xlarge]
+    SYMBOL_CONSTANT_MAP = (AVAILABILITY_ZONES + INSTANCE_TYPES).inject({}) { |memo,str| memo[str.tr('-.','_').to_sym] = str; memo }
+
     def constant (symbol)
-      {
-        :us_east_1a      => "us-east-1a",
-        :us_east_1b      => "us-east-1b",
-        :us_east_1c      => "us-east-1c",
-        :us_east_1d      => "us-east-1d",
-        :us_west_1a      => "us-west-1a",
-        :us_west_1b      => "us-west-1b",
-        :eu_west_1a      => "eu-west-1a",
-        :eu_west_1b      => "eu-west-1b",
-        :ap_southeast_1a => "ap-southeast-1a",
-        :ap_southeast_1b => "ap-southeast-1b",
-        :m1_small        => "m1.small",
-        :m1_large        => "m1.large" ,
-        :m1_xlarge       => "m1.xlarge",
-        :m2_xlarge       => "m2.xlarge",
-        :m2_2xlarge      => "m2.2xlarge",
-        :m2_4xlarge      => "m2.4xlarge",
-        :c1_medium       => "c1.medium",
-        :c1_xlarge       => "c1.xlarge"
-      }[symbol]
+      SYMBOL_CONSTANT_MAP[symbol]
     end
 
     def logger
@@ -277,3 +267,4 @@ module Awsborn
     
   end
 end
+
