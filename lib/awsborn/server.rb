@@ -153,8 +153,8 @@ module Awsborn
       logger.debug "Bootstrapping #{name}"
       script = bootstrap_script
       basename = File.basename(script)
-      system "scp #{script} root@#{elastic_ip}:/tmp"
-      system "ssh root@#{elastic_ip} 'cd /tmp && chmod 700 #{basename} && ./#{basename}'"
+      system "scp #{script} root@#{host_name}:/tmp"
+      system "ssh root@#{host_name} 'cd /tmp && chmod 700 #{basename} && ./#{basename}'"
     end
     
     def attach_volumes
@@ -189,10 +189,19 @@ module Awsborn
     end
     
     begin :accessors
-      attr_accessor :name, :host_name, :logger
+      attr_accessor :name, :logger
       def host_name= (string)
         logger.debug "Setting host_name of #{name} to #{string}"
         @host_name = string
+      end
+      def host_name
+        unless @host_name
+          logger.debug 'Looking up DNS name from volume ID'
+          self.host_name = aws_dns_name
+          logger.debug "got DNS name #{@host_name}"
+          update_known_hosts
+        end
+        @host_name
       end
       def zone
         @options[:zone]

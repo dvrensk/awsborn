@@ -88,6 +88,9 @@ Mandatory keys:
   `:us_east_1c`, `:us_west_1a`, `:us_west_1b`, `:eu_west_1a`, `:eu_west_1b`.
 * `:disk` -- a hash of `device => volume-id`.  Awsborn uses the disks to tell if a server
   is running or not (see *Launching a cluster*).
+
+Optional keys:
+
 * `:ip` -- a domain name which translates to an elastic ip.  If the domain name does not
   contain a full stop (dot) and `domain` has been specified above, the domain is added.
 
@@ -227,7 +230,6 @@ No bugs are known at this time.
 ### Untested features
 
 * Launching without ssh keys.  (I suppose certain AMIs would support that.)
-* Running without elastic ip.
 
 ## To do / Could do
 
