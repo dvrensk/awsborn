@@ -44,7 +44,7 @@ module Awsborn
   
     def logger
       unless defined? @logger
-        dir = [File.dirname(File.expand_path($0)), '/tmp'].find { |d| File.writable?(d) }
+        dir = [Dir.pwd, '/tmp'].find { |d| File.writable?(d) }
         if dir
           file = File.open(File.join(dir, 'awsborn.log'), 'a')
           file.sync = true
