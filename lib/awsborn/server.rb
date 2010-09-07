@@ -181,7 +181,7 @@ module Awsborn
     def run_chef
       logger.info "Running chef on #{host_name}"
       # Absolute path to config files to avoid a nasty irrational bug.
-      sh "ssh root@#{host_name} \"cd #{Awsborn.remote_chef_path}; chef-solo -c #{Awsborn.remote_chef_path}/config/solo.rb -j #{Awsborn.remote_chef_path}/config/dna.json\""
+      sh "ssh root@#{host_name} \"cd #{Awsborn.remote_chef_path}; chef-solo -l #{Awsborn.chef_log_level} -c #{Awsborn.remote_chef_path}/config/solo.rb -j #{Awsborn.remote_chef_path}/config/dna.json\""
     end
 
     def ec2

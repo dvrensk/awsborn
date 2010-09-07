@@ -7,36 +7,48 @@ module Awsborn
         default_klass.clusters.first
       end
 
-      desc "Start all servers (if needed) and deploy with chef"
-      task :default => [:start, :chef]
+      desc "Default: Start all servers (if needed) and deploy with chef."
+      task :all => [:start, "chef:run"]
+      task :default => :all
 
-      desc "Start all servers"
-      task :start do
-        default_cluster.launch
+      desc "Start all servers (or host=name1,name2)."
+      task :start do |t,args|
+        hosts = args[:host] && args[:host].split(',')
+        default_cluster.launch hosts
       end
 
-      desc "Run chef on all servers"
-      task :chef => [:check_syntax] do
-        default_cluster.each do |server|
-          server.cook
+      desc "Run chef on all servers (or host=name1,name2)."
+      task :chef => "chef:run"
+
+      namespace :chef do
+        task :run => [:check_syntax] do |t,args|
+          hosts = args[:host] && args[:host].split(',')
+          default_cluster.each do |server|
+            server.cook if hosts.nil? || hosts.include?(server.name.to_s)
+          end
         end
-      end
-      task :cook => [:chef]
 
-      desc "Check your cookbooks and config files for syntax errors"
-      task :check_syntax do
-        Dir["**/*.rb"].each do |recipe|
-          RakeFileUtils.verbose(false) do
-            sh %{ruby -c #{recipe} > /dev/null} do |ok, res|
-              raise "Syntax error in #{recipe}" if not ok 
+        desc "Run chef on all servers with log_level debug."
+        task :debug => [:set_chef_debug, :run]
+        task :set_chef_debug do
+          Awsborn.chef_log_level = :debug
+        end
+
+        desc "Check your cookbooks and config files for syntax errors."
+        task :check_syntax do
+          Dir["**/*.rb"].each do |recipe|
+            RakeFileUtils.verbose(false) do
+              sh %{ruby -c #{recipe} > /dev/null} do |ok, res|
+                raise "Syntax error in #{recipe}" if not ok 
+              end
             end
           end
         end
-      end
 
-      desc "Create a new cookbook (with cookbook=name)"
-      task :new_cookbook do
-        create_cookbook("cookbooks")
+        desc "Create a new cookbook (with cookbook=name)."
+        task :new_cookbook do
+          create_cookbook("cookbooks")
+        end
       end
 
       def create_cookbook(dir)

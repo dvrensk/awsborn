@@ -3,7 +3,7 @@ module Awsborn
   class ServerError < StandardError ; end
 
   class << self
-    attr_writer :access_key_id, :secret_access_key, :logger, :remote_chef_path
+    attr_writer :access_key_id, :secret_access_key, :logger, :remote_chef_path, :chef_log_level
     attr_accessor :verbose
 
     Awsborn.verbose = true
@@ -80,6 +80,10 @@ module Awsborn
     def verbose_output(message)
       puts message if Awsborn.verbose
     end
-    
+
+    def chef_log_level
+      @chef_log_level || :info
+    end
+
   end
 end

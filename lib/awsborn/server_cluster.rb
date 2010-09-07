@@ -22,8 +22,9 @@ module Awsborn
       @instances << instance
     end
 
-    def launch
-      running, missing = @instances.partition { |e| e.running? }
+    def launch (names)
+      requested = names.nil? ? @instances : @instances.select { |s| names.include?(s.name.to_s) }
+      running, missing = requested.partition { |e| e.running? }
       refresh_running(running) if running.any?
       start_missing_instances(missing) if missing.any?
     end
