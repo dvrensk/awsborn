@@ -57,7 +57,7 @@ module Awsborn
 
     def running?
       map = {}
-      disk.values.each { |vol_id| map[vol_id] = ec2.instance_id_for_volume(vol_id) }
+      disk_volume_ids.each { |vol_id| map[vol_id] = ec2.instance_id_for_volume(vol_id) }
       ids = map.values.uniq
       if ids.size > 1
         raise ServerError, "Volumes for #{self.class.name}:#{name} are connected to several instances: #{map.inspect}"
@@ -159,7 +159,8 @@ module Awsborn
     
     def attach_volumes
       logger.debug "Attaching volumes #{disk.values.join(', ')} to #{name}"
-      disk.each_pair do |device, volume|
+      disk.each_pair do |device, str_or_ary|
+        volume = str_or_ary.is_a?(Array) ? str_or_ary.first : str_or_ary
         device = "/dev/#{device}" if device.is_a?(Symbol) || ! device.match('/')
         res = ec2.attach_volume(volume, device)
       end
@@ -208,6 +209,13 @@ module Awsborn
       end
       def disk
         @options[:disk]
+      end
+      def disk_volume_ids
+        disk.values.map { |str_or_ary| str_or_ary.is_a?(Array) ? str_or_ary.first : str_or_ary }
+      end
+      def format_disk_on_device? (device)
+        volume = disk[device.to_sym]
+        volume.is_a?(Array) && volume.last == :format
       end
       def image_id
         self.class.image_id

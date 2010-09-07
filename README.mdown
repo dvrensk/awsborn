@@ -65,7 +65,7 @@ Servers take five different directives:
 * `image_id` -- a valid EC2 AMI.  Specify `:sudo_user` as an option if the AMI
   does not allow you to log in as root.
 * `security_group` -- a security group that you own.
-* `keys` -- one or more globs to public ssh keys.  When the servers are running,
+* `keys` -- one or more globs to public ssh key files.  When the servers are running,
   `root` will be able to log in using any one of these keys.
 * `bootstrap_script` -- path to a script which will be run on each instance as
   soon as it is started.  Use it to bootstrap `chef` and let `chef` take it from
@@ -87,7 +87,9 @@ Mandatory keys:
 * `:zone` -- the availability zone for the server.  One of `:us_east_1a`, `:us_east_1b`,
   `:us_east_1c`, `:us_west_1a`, `:us_west_1b`, `:eu_west_1a`, `:eu_west_1b`.
 * `:disk` -- a hash of `device => volume-id`.  Awsborn uses the disks to tell if a server
-  is running or not (see *Launching a cluster*).
+  is running or not (see *Launching a cluster*).  `volume-id` can also be an array
+  `[volume-id, :format]`, in which case `the_server.format_disk_on_device?(device)`
+  will return `true`.  See `contrib/cookbooks/ec2-ebs` for example usage.
 
 Optional keys:
 
@@ -209,6 +211,7 @@ Awsborn integrates with [Chef Solo](http://github.com/opscode/chef).  An example
             "ec2-ebs",
             "git",
             "gems",
+            "lumberjack"
           ]
         }
       end
