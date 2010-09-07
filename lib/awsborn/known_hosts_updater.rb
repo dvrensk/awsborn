@@ -26,10 +26,11 @@ module Awsborn
         tries += 1
         try_update
       rescue SecurityError => e
-        if tries < 5
+        if tries < 8
           logger.debug e.message
-          logger.debug "Sleeping, try #{tries}"
-          sleep([2**tries, 15].min)
+          sleep_time = [2**tries, 30].min
+          logger.debug "Fingerprint try #{tries} failed, sleeping #{sleep_time} seconds"
+          sleep(sleep_time)
           retry
         else
           raise e
