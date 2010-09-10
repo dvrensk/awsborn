@@ -11,7 +11,10 @@ module Awsborn
       task :all => [:start, "chef:run"]
       task :default => :all
 
-      desc "Start all servers (or host=name1,name2)."
+      desc "Like 'all' but with chef debugging on."
+      task :debug => ["chef:set_chef_debug", :all]
+
+      desc "Start all servers (or host=name1,name2) but don't run chef."
       task :start do |t,args|
         hosts = args[:host] && args[:host].split(',')
         default_cluster.launch hosts

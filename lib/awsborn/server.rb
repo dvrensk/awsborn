@@ -13,6 +13,10 @@ module Awsborn
         @children ||= []
         @children << klass
       end
+      # Set image_id.  Examples:
+      #   image_id 'ami-123123'
+      #   image_id 'ami-123123', :sudo_user => 'ubuntu'
+      #   image_id :i386 => 'ami-323232', :x64 => 'ami-646464', :sudo_user => 'ubuntu'
       def image_id (*args)
         unless args.empty?
           @image_id = args.first
@@ -218,7 +222,17 @@ module Awsborn
         volume.is_a?(Array) && volume.last == :format
       end
       def image_id
-        self.class.image_id
+        return @options[:image_id] if @options[:image_id]
+        tmp = self.class.image_id
+        tmp.is_a?(String) ? tmp : tmp[architecture]
+      end
+      def architecture
+        string = constant(instance_type)
+        case
+        when INSTANCE_TYPES_32_BIT.include?(string) then :i386
+        when INSTANCE_TYPES_64_BIT.include?(string) then :x64
+        else raise "Don't know if #{instance_type} is i386 or x64"
+        end
       end
       def instance_type
         @options[:instance_type] || self.class.instance_type
@@ -271,7 +285,9 @@ module Awsborn
       eu-west-1a eu-west-1b
       ap-southeast-1a ap-southeast-1b
     ]
-    INSTANCE_TYPES = %w[m1.small m1.large m1.xlarge m2.xlarge m2.2xlarge m2.4xlarge c1.medium c1.xlarge]
+    INSTANCE_TYPES_32_BIT = %w[m1.small c1.medium t1.micro]
+    INSTANCE_TYPES_64_BIT = %w[m1.large m1.xlarge m2.xlarge m2.2xlarge m2.4xlarge c1.xlarge cc1.4xlarge t1.micro]
+    INSTANCE_TYPES = (INSTANCE_TYPES_32_BIT + INSTANCE_TYPES_64_BIT).uniq
     SYMBOL_CONSTANT_MAP = (AVAILABILITY_ZONES + INSTANCE_TYPES).inject({}) { |memo,str| memo[str.tr('-.','_').to_sym] = str; memo }
 
     def constant (symbol)

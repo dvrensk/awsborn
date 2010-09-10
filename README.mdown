@@ -62,8 +62,8 @@ Servers take five different directives:
 
 * `instance_type` -- a symbol.  One of `:m1_small`, `:m1_large`, `:m1_xlarge`,
   `:m2_2xlarge`, `:m2_4xlarge`, `:c1_medium`, and `:c1_xlarge`.
-* `image_id` -- a valid EC2 AMI.  Specify `:sudo_user` as an option if the AMI
-  does not allow you to log in as root.
+* `image_id` -- a valid EC2 AMI or a hash `{:i386 => 'ami-3232', :x64 => 'ami-6464'}`
+  Specify `:sudo_user` as an option if the AMI does not allow you to log in as root.
 * `security_group` -- a security group that you own.
 * `keys` -- one or more globs to public ssh key files.  When the servers are running,
   `root` will be able to log in using any one of these keys.
@@ -103,6 +103,7 @@ Keys that override server type settings:
 * `:security_group`
 * `:keys`
 * `:bootstrap_script`
+* `:image_id`
 
 ### Launching a cluster
 
@@ -233,7 +234,13 @@ Other rake tasks include:
 
 ## Bugs and surprising features
 
-No bugs are known at this time.
+* There is a race condition in launch: Immediately after the launch request (`launch_instance`) we
+  call `instance_running?`, but occasionally, AWS will not recognise the instance id yet
+  (`InvalidInstanceID.NotFound: The instance ID 'i-e9005283' does not exist`)
+* Running with `rake` suppresses stack traces which makes it hard to debug rare errors.  The rake
+  tasks or entry points should catch exceptions and print the stack trace.
+* `t1_micro` instances will select an i386 image when `image_id` is specified as a hash.  To run
+  them with x64 images, specify the image name on the server directive.
 
 ### Untested features
 
@@ -246,8 +253,6 @@ No bugs are known at this time.
 * Hack RightAws to verify certificates.
 * Elastic Load Balancing.
 * Launch servers in parallel.
-* Make `image_id` a hash with different AMIs for different instance types.
-* Make `image_id` overridable per server.
 
 
 ## Note on Patches/Pull Requests
