@@ -61,7 +61,7 @@ Server types can be named anything but must inherit from `Awsborn::Server`.
 Servers take five different directives:
 
 * `instance_type` -- a symbol.  One of `:m1_small`, `:m1_large`, `:m1_xlarge`,
-  `:m2_2xlarge`, `:m2_4xlarge`, `:c1_medium`, and `:c1_xlarge`.
+  `:m2_2xlarge`, `:m2_4xlarge`, `:c1_medium`, `:c1_xlarge`, `cc1.4xlarge`, and `t1.micro`.
 * `image_id` -- a valid EC2 AMI or a hash `{:i386 => 'ami-3232', :x64 => 'ami-6464'}`
   Specify `:sudo_user` as an option if the AMI does not allow you to log in as root.
 * `security_group` -- a security group that you own.
@@ -85,7 +85,8 @@ and a hash:
 Mandatory keys:
 
 * `:zone` -- the availability zone for the server.  One of `:us_east_1a`, `:us_east_1b`,
-  `:us_east_1c`, `:us_west_1a`, `:us_west_1b`, `:eu_west_1a`, `:eu_west_1b`.
+  `:us_east_1c`, `:us_east_1d`, `:us_west_1a`, `:us_west_1b`, `:eu_west_1a`, `:eu_west_1b`,
+  `:ap-southeast-1a`, `:ap-southeast-1b`.
 * `:disk` -- a hash of `device => volume-id`.  Awsborn uses the disks to tell if a server
   is running or not (see *Launching a cluster*).  `volume-id` can also be an array
   `[volume-id, :format]`, in which case `the_server.format_disk_on_device?(device)`
@@ -111,7 +112,7 @@ The `launch` method on the cluster checks to see if each server is running by ch
 if the server's disks are attached to an EC2 instance, i.e., the server is
 defined by its content, not by its AMI or ip address.
 
-Servers that not running are started by calling the `start` method on the server,
+Servers that are not running are started by calling the `start` method on the server,
 which does the following:
 
     def start (key_pair)
@@ -224,7 +225,8 @@ Just add a `Rakefile` in the same directory:
     include Awsborn::Chef::Rake
     require './servers'
 
-You are now able to run `rake` to start all servers and run Chef on each of them.
+Put your cookbooks directory in the same directory as the `Rakefile` or in its
+parent directory.  Run `rake` to start all servers and run Chef on each of them.
 Other rake tasks include:
 
 * `rake chef` - Run chef on all servers, or the ones specified with `host=name1,name2`.
@@ -261,11 +263,22 @@ Other rake tasks include:
 * Make your feature addition or bug fix.
 * Add tests for it. This is important so I don't break it in a
   future version unintentionally.
-* At the moment, the gem does not have any tests.  I intend to fix that,
+* At the moment, the gem does not have much tests.  I intend to fix that,
   and I won't accept patches without tests.
 * Commit, do not mess with rakefile, version, or history.
   (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
 * Send me a pull request. Bonus points for topic branches.
+
+## Changes
+
+### New in 0.5.1
+
+* When awsborn uploads cookbooks and configuration, it looks for a `cookbooks`
+  directory in the parent directory if none is found in the `Rakefile`'s directory.
+
+### New in 0.5.0
+
+* Support for cc1.4xlarge and t1.micro instance types.
 
 ## History
 

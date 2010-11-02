@@ -177,10 +177,16 @@ module Awsborn
 
     def upload_cookbooks
       logger.info "Uploading cookbooks to #{host_name}"
+
+      cookbooks_dir = '../cookbooks' # Hard coded for now
+      temp_link = File.directory?(cookbooks_dir) && ! File.directory?('cookbooks')
+      File.symlink(cookbooks_dir, 'cookbooks') if temp_link
+
       File.open("config/dna.json", "w") { |f| f.write(chef_dna.to_json) }
-      sh "rsync -rL --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
+      system "rsync -rL --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
     ensure
       File.delete("config/dna.json")
+      File.delete("cookbooks") if temp_link
     end
 
     def run_chef

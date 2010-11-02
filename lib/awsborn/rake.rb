@@ -1,8 +1,23 @@
 module Awsborn
-  module Chef
+  module Chef #:nodoc:
+    # Just add a `Rakefile` in the same directory as your server definition file.
+    #
+    #     require 'awsborn'
+    #     include Awsborn::Chef::Rake
+    #     require './servers'
+    #
+    # You are now able to run `rake` to start all servers and run Chef on each of them.
+    # Other rake tasks include:
+    #
+    # * `rake chef` - Run chef on all servers, or the ones specified with `host=name1,name2`.
+    # * `rake chef:debug` - Ditto, but with chef's log level set to `debug`.
+    # * `rake start` - Start all servers (or host=name1,name2) but don't run `chef`.
+    #
+    # You can use `server=name1,name2` as a synonym for `host=...`
+    #
     module Rake
 
-      def default_cluster
+      def default_cluster #:nodoc:
         default_klass = Awsborn::Server.children.first
         default_klass.clusters.first
       end
@@ -16,8 +31,15 @@ module Awsborn
 
       desc "Start all servers (or host=name1,name2) but don't run chef."
       task :start do |t,args|
-        hosts = args[:host] && args[:host].split(',')
-        default_cluster.launch hosts
+        default_cluster.launch get_hosts(args)
+      end
+
+      desc "Update .ssh/known_hosts with data from all servers (or host=host1,host2)"
+      task :update_known_hosts do |t,args|
+        hosts = get_hosts(args)
+        default_cluster.each do |server|
+          server.running? && server.update_known_hosts if hosts.nil? || hosts.include?(server.name.to_s)
+        end
       end
 
       desc "Run chef on all servers (or host=name1,name2)."
@@ -25,9 +47,11 @@ module Awsborn
 
       namespace :chef do
         task :run => [:check_syntax] do |t,args|
-          hosts = args[:host] && args[:host].split(',')
+          hosts = get_hosts(args)
           default_cluster.each do |server|
-            server.cook if hosts.nil? || hosts.include?(server.name.to_s)
+            next unless hosts.nil? || hosts.include?(server.name.to_s)
+            puts framed("Running chef on '#{server.name}'")
+            server.cook
           end
         end
 
@@ -54,7 +78,7 @@ module Awsborn
         end
       end
 
-      def create_cookbook(dir)
+      def create_cookbook(dir) #:nodoc:
         raise "Must provide a cookbook=" unless ENV["cookbook"]
         puts "** Creating cookbook #{ENV["cookbook"]}"
         sh "mkdir -p #{File.join(dir, ENV["cookbook"], "attributes")}" 
@@ -74,6 +98,14 @@ module Awsborn
 EOH
           end
         end
+      end
+
+      def get_hosts (args) #:nodoc:
+        args[:host] && args[:host].split(',') || args[:server] && args[:server].split(',')
+      end
+
+      def framed (message) #:nodoc:
+        '*' * (4 + message.length) + "\n* #{message} *\n" + '*' * (4 + message.length)
       end
     end
   end
