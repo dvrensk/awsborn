@@ -78,6 +78,16 @@ module Awsborn
         end
       end
 
+      desc "Update chef on the server"
+      task :update_chef do |t,args|
+        hosts = get_hosts(args)
+        default_cluster.each do |server|
+          puts framed("Updating chef on server")
+          # Include excplicit path to avoid rvm
+          sh "ssh root@#{server.host_name} 'PATH=/usr/sbin:/usr/bin:/sbin:/bin gem install chef --no-ri --no-rdoc'"
+        end
+      end
+
       def create_cookbook(dir) #:nodoc:
         raise "Must provide a cookbook=" unless ENV["cookbook"]
         puts "** Creating cookbook #{ENV["cookbook"]}"
