@@ -82,7 +82,8 @@ module Awsborn
       task :update_chef do |t,args|
         hosts = get_hosts(args)
         default_cluster.each do |server|
-          puts framed("Updating chef on server")
+          next if hosts && ! hosts.include?(server.name.to_s)
+          puts framed("Updating chef on server #{server.name}")
           # Include excplicit path to avoid rvm
           sh "ssh root@#{server.host_name} 'PATH=/usr/sbin:/usr/bin:/sbin:/bin gem install chef --no-ri --no-rdoc'"
         end
