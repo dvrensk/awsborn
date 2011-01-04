@@ -1,5 +1,7 @@
 module Awsborn
   class ServerCluster
+    include Enumerable
+
     def self.build (klass, &block)
       cluster = new(klass)
       block.bind(cluster, 'cluster').call

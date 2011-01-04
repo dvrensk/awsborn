@@ -78,6 +78,17 @@ module Awsborn
         end
       end
 
+      desc "List running servers"
+      task :list do
+        running = default_cluster.select { |server| server.running? }
+        max_name_length = running.map { |server| server.name.to_s.size }.max
+        running.each do |server|
+          h = server.describe_instance
+          puts "%-#{max_name_length}s -- %s -- %s -- %s (%s)" %
+            [server.name, server.host_name, h[:aws_availability_zone], h[:aws_instance_type], h[:architecture]]
+        end
+      end
+
       desc "Update chef on the server"
       task :update_chef do |t,args|
         hosts = get_hosts(args)
