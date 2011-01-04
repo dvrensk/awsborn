@@ -56,7 +56,7 @@ module Awsborn
           fingerprint = console[regexp, 1]
           if ! fingerprint
             logger.error "*** SSH RSA fingerprint not found ***"
-            logger.error lines
+            logger.error console
             logger.error "*** SSH RSA fingerprint not found ***"
           end
         end
