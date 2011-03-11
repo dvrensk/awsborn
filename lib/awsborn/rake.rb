@@ -84,8 +84,8 @@ module Awsborn
         max_name_length = running.map { |server| server.name.to_s.size }.max
         running.each do |server|
           h = server.describe_instance
-          puts "%-#{max_name_length}s -- %s -- %s -- %s (%s)" %
-            [server.name, server.host_name, h[:aws_availability_zone], h[:aws_instance_type], h[:architecture]]
+          puts "%-#{max_name_length}s -- %s -- %s -- %s (%s) %s" %
+            [server.name, server.host_name, h[:aws_availability_zone], h[:aws_instance_type], h[:architecture], h[:aws_instance_id]]
         end
       end
 
