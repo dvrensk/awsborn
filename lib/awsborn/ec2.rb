@@ -5,6 +5,13 @@ module Awsborn
     
     attr_accessor :instance_id
 
+    class << self
+      def endpoint_for_zone (zone)
+        zone = zone.to_s.sub(/[a-z]$/,'').tr('_','-')
+        "https://#{zone}.ec2.amazonaws.com"
+      end
+    end
+
     def connection
       unless @connection
         env_ec2_url = ENV['EC2_URL']
@@ -21,14 +28,7 @@ module Awsborn
     end      
     
     def initialize (zone)
-      @endpoint = case zone
-      when :eu_west_1a, :eu_west_1b
-        'https://eu-west-1.ec2.amazonaws.com/'
-      when :us_east_1a, :us_east_1b
-        'https://us-east-1.ec2.amazonaws.com'
-      else
-        'https://ec2.amazonaws.com'
-      end
+      @endpoint = self.class.endpoint_for_zone(zone)
     end
 
     KeyPair = Struct.new :name, :path

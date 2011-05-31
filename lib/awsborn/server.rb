@@ -290,6 +290,7 @@ module Awsborn
       us-west-1a us-west-1b
       eu-west-1a eu-west-1b
       ap-southeast-1a ap-southeast-1b
+      ap-northeast-1a ap-northeast-1b
     ]
     INSTANCE_TYPES_32_BIT = %w[m1.small c1.medium t1.micro]
     INSTANCE_TYPES_64_BIT = %w[m1.large m1.xlarge m2.xlarge m2.2xlarge m2.4xlarge c1.xlarge cc1.4xlarge t1.micro]
