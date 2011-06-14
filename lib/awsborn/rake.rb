@@ -17,11 +17,6 @@ module Awsborn
     #
     module Rake
 
-      def default_cluster #:nodoc:
-        default_klass = Awsborn::Server.children.first
-        default_klass.clusters.first
-      end
-
       desc "Default: Start all servers (if needed) and deploy with chef."
       task :all => [:start, "chef:run"]
       task :default => :all
@@ -31,13 +26,13 @@ module Awsborn
 
       desc "Start all servers (or host=name1,name2) but don't run chef."
       task :start do |t,args|
-        default_cluster.launch get_hosts(args)
+        cluster(args).launch get_hosts(args)
       end
 
       desc "Update .ssh/known_hosts with data from all servers (or host=host1,host2)"
       task :update_known_hosts do |t,args|
         hosts = get_hosts(args)
-        default_cluster.each do |server|
+        cluster(args).each do |server|
           server.running? && server.update_known_hosts if hosts.nil? || hosts.include?(server.name.to_s)
         end
       end
@@ -48,7 +43,7 @@ module Awsborn
       namespace :chef do
         task :run => [:check_syntax] do |t,args|
           hosts = get_hosts(args)
-          default_cluster.each do |server|
+          cluster(args).each do |server|
             next unless hosts.nil? || hosts.include?(server.name.to_s)
             puts framed("Running chef on '#{server.name}'")
             server.cook
@@ -79,8 +74,8 @@ module Awsborn
       end
 
       desc "List running servers"
-      task :list do
-        running = default_cluster.select { |server| server.running? }
+      task :list do |t,args|
+        running = cluster(args).select { |server| server.running? }
         max_name_length = running.map { |server| server.name.to_s.size }.max
         running.each do |server|
           h = server.describe_instance
@@ -92,7 +87,7 @@ module Awsborn
       desc "Update chef on the server"
       task :update_chef do |t,args|
         hosts = get_hosts(args)
-        default_cluster.each do |server|
+        cluster(args).each do |server|
           next if hosts && ! hosts.include?(server.name.to_s)
           puts framed("Updating chef on server #{server.name}")
           # Include excplicit path to avoid rvm
@@ -129,6 +124,12 @@ EOH
       def framed (message) #:nodoc:
         '*' * (4 + message.length) + "\n* #{message} *\n" + '*' * (4 + message.length)
       end
+
+      def cluster (args) #:nodoc:
+        name = args[:c] || args[:cluster] || 'cluster 1'
+        Awsborn::ServerCluster.clusters.detect { |c| c.name == name } || raise("Could not find cluster named '#{name}'")
+      end
+
     end
   end
 end

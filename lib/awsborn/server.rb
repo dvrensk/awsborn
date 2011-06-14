@@ -8,11 +8,8 @@ module Awsborn
     end
     
     class << self
-      attr_accessor :logger, :children, :clusters
-      def inherited (klass)
-        @children ||= []
-        @children << klass
-      end
+      attr_accessor :logger
+
       # Set image_id.  Examples:
       #   image_id 'ami-123123'
       #   image_id 'ami-123123', :sudo_user => 'ubuntu'
@@ -53,10 +50,8 @@ module Awsborn
         @monitor
       end
       
-      def cluster (&block)
-        @clusters ||= []
-        @clusters << ServerCluster.build(self, &block)
-        @clusters.last
+      def cluster (name = ServerCluster.next_name, &block)
+        ServerCluster.build(self, name, &block)
       end
       def logger
         @logger ||= Awsborn.logger

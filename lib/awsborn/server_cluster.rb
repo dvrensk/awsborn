@@ -2,15 +2,33 @@ module Awsborn
   class ServerCluster
     include Enumerable
 
-    def self.build (klass, &block)
-      cluster = new(klass)
+    attr_accessor :name
+
+    def self.build (klass, name, &block)
+      cluster = new(klass, name)
       block.bind(cluster, 'cluster').call
       cluster
     end
 
-    def initialize (klass)
+    def self.clusters
+      @clusters ||= []
+    end
+
+    def self.next_name
+      @next_name_counter ||= 1
+      old_names = clusters.map { |c| c.name }
+      begin
+        next_name = "cluster #{@next_name_counter}"
+        @next_name_counter += 1
+      end while old_names.include?(next_name)
+      next_name
+    end
+
+    def initialize (klass, name)
       @klass = klass
+      @name = name.to_s
       @instances = []
+      self.class.clusters << self
     end
     
     def domain (*args)

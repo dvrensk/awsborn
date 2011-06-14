@@ -182,6 +182,11 @@ Awsborn integrates with [Chef Solo](http://github.com/opscode/chef).  An example
         server :log_b, :zone => :eu_west_1b, :disk => {:sdf => "vol-aa57b8c3"}, :ip => 'log-b'
       end
 
+      cluster :test do
+        domain 'releware.net'
+        server :test, :zone => :eu_west_1b, :disk => {:sdf => "vol-abababab"}, :ip => 'log-test'
+      end
+
       def chef_dna
         {
           :user => "lumberjack",
@@ -232,6 +237,7 @@ Other rake tasks include:
 * `rake chef` - Run chef on all servers, or the ones specified with `host=name1,name2`.
 * `rake chef:debug` - Ditto, but with chef's log level set to `debug`.
 * `rake start` - Start all servers (or host=name1,name2) but don't run `chef`.
+* `rake start cluster=test` - Start the servers in the named cluster.  Default is the first unnamed cluster.
 
 
 ## Bugs and surprising features
@@ -276,6 +282,7 @@ Other rake tasks include:
 * Allow several security groups per server.
 * Specify `individual_security_group true` to add a unique-ish security group named _`ServerClass servername`_.
   This security group is created on the fly if it doesn't exist.
+* Server clusters can have names.
 
 ### New in 0.6.0
 
