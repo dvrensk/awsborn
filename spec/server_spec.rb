@@ -13,6 +13,7 @@ end
 
 describe Awsborn::Server do
   before(:each) do
+    Awsborn.verbose = false
     @server = SampleServer.new :sample, :zone => :eu_west_1a, :disk => {:sdf => "vol-aaaaaaaa"}
   end
 
@@ -54,4 +55,33 @@ describe Awsborn::Server do
     end
     
   end
+
+  context ".security_group" do
+    class SecureServer < Awsborn::Server
+      instance_type :m1_small
+      image_id 'ami-2fc2e95b'
+      security_group 'Common', 'Other'
+      individual_security_group true
+    end
+
+    before do
+      @server = SecureServer.new :sample, :zone => :eu_west_1a, :disk => {:sdf => "vol-aaaaaaaa"}
+    end
+    it "allows multiple security groups" do
+      key_pair = mock(:key_pair)
+      key_pair.should_receive(:name).and_return('fake')
+      ec2 = mock(:ec2)
+      ec2.should_receive(:instance_id).and_return('i-asdf')
+      ec2.should_receive(:launch_instance).with do |image_id, options|
+        image_id.should == 'ami-2fc2e95b'
+        options[:group_ids].should == ['Common', 'Other', 'SecureServer sample']
+      end
+      ec2.should_receive(:create_security_group_if_missing)
+      @server.stub(:ec2).and_return(ec2)
+      @server.should_receive(:instance_running?).and_return(true)
+      @server.should_receive(:aws_dns_name).and_return('asdf')
+      @server.launch_instance(key_pair)
+    end
+  end
+
 end

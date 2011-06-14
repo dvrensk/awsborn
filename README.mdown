@@ -271,6 +271,24 @@ Other rake tasks include:
 
 ## Changes
 
+### New in 0.7.0
+
+* Allow several security groups per server.
+* Specify `individual_security_group true` to add a unique-ish security group named _`ServerClass servername`_.
+  This security group is created on the fly if it doesn't exist.
+
+### New in 0.6.0
+
+* Uses `right_aws` version 2.
+
+### New in 0.5.4, 0.5.5
+
+* Run `rake list` to see a list of running servers.
+
+### New in 0.5.2, 0.5.3
+
+* Run `rake upgrade_chef host=foo` to upgrade chef on server `foo`.
+
 ### New in 0.5.1
 
 * When awsborn uploads cookbooks and configuration, it looks for a `cookbooks`

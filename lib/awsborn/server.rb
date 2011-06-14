@@ -29,8 +29,12 @@ module Awsborn
         @instance_type
       end
       def security_group (*args)
-        @security_group = args.first unless args.empty?
+        @security_group = args unless args.empty?
         @security_group
+      end
+      def individual_security_group (*args)
+        @individual_security_group = args.first unless args.empty?
+        @individual_security_group
       end
       def keys (*args)
         @keys = args unless args.empty?
@@ -244,7 +248,14 @@ module Awsborn
         @options[:instance_type] || self.class.instance_type
       end
       def security_group
-        @options[:security_group] || self.class.security_group
+        groups = @options[:security_group] || self.class.security_group
+        if self.class.individual_security_group
+          group_name = "#{self.class.name} #{name}"
+          ec2.create_security_group_if_missing(group_name, "#{group_name} private security group")
+          groups + [group_name]
+        else
+          groups
+        end
       end
       def sudo_user
         @options[:sudo_user] || self.class.sudo_user

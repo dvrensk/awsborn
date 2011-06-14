@@ -2,7 +2,7 @@ module Awsborn
   class Ec2
     extend Forwardable
     def_delegators :Awsborn, :logger
-    
+
     attr_accessor :instance_id
 
     class << self
@@ -25,14 +25,14 @@ module Awsborn
         end
       end
       @connection
-    end      
-    
+    end
+
     def initialize (zone)
       @endpoint = self.class.endpoint_for_zone(zone)
     end
 
     KeyPair = Struct.new :name, :path
-    
+
     def generate_key_pair
       time = Time.now
       key_name = "temp_key_#{time.to_i}_#{time.usec}"
@@ -71,12 +71,12 @@ module Awsborn
       self.instance_id = response[:aws_instance_id]
       response
     end
-    
+
     def get_console_output
       output = connection.get_console_output(instance_id)
       output[:aws_output]
     end
-    
+
     def attach_volume (volume, device)
       connection.attach_volume(volume, instance_id, device)
     end
@@ -84,7 +84,7 @@ module Awsborn
     def monitoring?
       %w[enabled pending].include?(describe_instance[:monitoring_state])
     end
-    
+
     def monitor
       logger.debug "Activating monitoring for #{instance_id}"
       connection.monitor_instances(instance_id)
@@ -93,6 +93,12 @@ module Awsborn
     def unmonitor
       logger.debug "Deactivating monitoring for #{instance_id}"
       connection.unmonitor_instances(instance_id)
+    end
+
+    def create_security_group_if_missing (group_name, description = "Created by Awsborn")
+      unless connection.describe_security_groups.detect { |group| group[:aws_group_name] == group_name }
+        connection.create_security_group(group_name, description)
+      end
     end
 
   end
