@@ -243,7 +243,8 @@ module Awsborn
         @options[:instance_type] || self.class.instance_type
       end
       def security_group
-        groups = @options[:security_group] || self.class.security_group
+        groups = @options[:security_group] || self.class.security_group || []
+        groups.each { |group_name| ec2.create_security_group_if_missing(group_name) }
         if self.class.individual_security_group
           group_name = "#{self.class.name} #{name}"
           ec2.create_security_group_if_missing(group_name, "#{group_name} private security group")
