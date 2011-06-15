@@ -170,6 +170,7 @@ module Awsborn
     end
 
     def cook
+      raise "#{host_name} not running" unless running?
       upload_cookbooks
       run_chef
     end
@@ -184,7 +185,7 @@ module Awsborn
       File.open("config/dna.json", "w") { |f| f.write(chef_dna.to_json) }
       system "rsync -rL --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
     ensure
-      File.delete("config/dna.json")
+      FileUtils.rm_f("config/dna.json")
       File.delete("cookbooks") if temp_link
     end
 
@@ -201,7 +202,7 @@ module Awsborn
     begin :accessors
       attr_accessor :name, :logger
       def host_name= (string)
-        logger.debug "Setting host_name of #{name} to #{string}"
+        logger.debug "Setting host_name of #{name} to #{string.inspect}"
         @host_name = string
       end
       def host_name
