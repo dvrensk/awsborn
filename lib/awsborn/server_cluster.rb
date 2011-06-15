@@ -14,6 +14,12 @@ module Awsborn
       @clusters ||= []
     end
 
+    def self.cluster_for (instance)
+      clusters.each do |cluster|
+        return cluster if cluster.detect { |i| i == instance }
+      end
+    end
+
     def self.next_name
       @next_name_counter ||= 1
       old_names = clusters.map { |c| c.name }

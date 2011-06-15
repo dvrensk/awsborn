@@ -291,6 +291,9 @@ module Awsborn
       def describe_instance
         @describe_instance ||= ec2.describe_instance
       end
+      def cluster_name
+        ServerCluster.cluster_for(self).name
+      end
     end
 
     AVAILABILITY_ZONES = %w[
