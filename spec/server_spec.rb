@@ -17,12 +17,15 @@ describe Awsborn::Server do
     @server = SampleServer.new :sample, :zone => :eu_west_1a, :disk => {:sdf => "vol-aaaaaaaa"}
   end
 
-  context "constants" do
+  describe "awz_constant" do
     it "should look up an availability zone" do
-      @server.constant(:eu_west_1a).should == "eu-west-1a"
+      @server.awz_constant(:eu_west_1a).should == "eu-west-1a"
     end
     it "should look up an instance type" do
-      @server.constant(:m1_large).should == "m1.large"
+      @server.awz_constant(:m1_large).should == "m1.large"
+    end
+    it "should raise an error if the symbol is unknown" do
+      expect{@server.awz_constant(:unknown_constant)}.to raise_error(Awsborn::UnknownConstantError)
     end
   end
 

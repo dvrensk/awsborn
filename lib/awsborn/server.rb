@@ -1,6 +1,7 @@
 module Awsborn
   class Server
-    
+    include Awsborn::AwsConstants
+
     def initialize (name, options = {})
       @name = name
       @options = options.dup
@@ -106,8 +107,8 @@ module Awsborn
 
     def launch_instance (key_pair)
       @launch_response = ec2.launch_instance(image_id,
-        :instance_type => constant(instance_type),
-        :availability_zone => constant(zone),
+        :instance_type => symbol_to_aws_instance_type(instance_type),
+        :availability_zone => symbol_to_aws_zone(zone),
         :key_name => key_pair.name,
         :group_ids => security_group,
         :monitoring_enabled => monitor
@@ -233,7 +234,7 @@ module Awsborn
         tmp.is_a?(String) ? tmp : tmp[architecture]
       end
       def architecture
-        string = constant(instance_type)
+        string = symbol_to_aws_instance_type(instance_type)
         case
         when INSTANCE_TYPES_32_BIT.include?(string) then :i386
         when INSTANCE_TYPES_64_BIT.include?(string) then :x64
@@ -294,22 +295,6 @@ module Awsborn
       def cluster_name
         ServerCluster.cluster_for(self).name
       end
-    end
-
-    AVAILABILITY_ZONES = %w[
-      us-east-1a us-east-1b us-east-1c us-east-1d
-      us-west-1a us-west-1b
-      eu-west-1a eu-west-1b
-      ap-southeast-1a ap-southeast-1b
-      ap-northeast-1a ap-northeast-1b
-    ]
-    INSTANCE_TYPES_32_BIT = %w[m1.small c1.medium t1.micro]
-    INSTANCE_TYPES_64_BIT = %w[m1.large m1.xlarge m2.xlarge m2.2xlarge m2.4xlarge c1.xlarge cc1.4xlarge t1.micro]
-    INSTANCE_TYPES = (INSTANCE_TYPES_32_BIT + INSTANCE_TYPES_64_BIT).uniq
-    SYMBOL_CONSTANT_MAP = (AVAILABILITY_ZONES + INSTANCE_TYPES).inject({}) { |memo,str| memo[str.tr('-.','_').to_sym] = str; memo }
-
-    def constant (symbol)
-      SYMBOL_CONSTANT_MAP[symbol]
     end
 
     def logger
