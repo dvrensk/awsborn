@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
     "README.mdown",
     "Rakefile",
     "VERSION",
+    "awsborn.gemspec",
     "contrib/chef-bootstrap.sh",
     "contrib/cookbooks/ec2-ebs/recipes/default.rb",
     "lib/awsborn.rb",
