@@ -2,6 +2,18 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Awsborn::AwsConstants do
   include Awsborn::AwsConstants
+  describe "endpoint_for_zone_and_service" do
+    it "should have endpoints for each service and for zones in five regions" do
+      endpoint_for_zone_and_service(:eu_west_1a,  :ec2).should == 'https://eu-west-1.ec2.amazonaws.com'
+      endpoint_for_zone_and_service("eu_west_1b", :ec2).should == 'https://eu-west-1.ec2.amazonaws.com'
+      endpoint_for_zone_and_service(:us_west_1b,  :ec2).should == 'https://us-west-1.ec2.amazonaws.com'
+      endpoint_for_zone_and_service(:us_east_1b,  :ec2).should == 'https://us-east-1.ec2.amazonaws.com'
+      endpoint_for_zone_and_service(:eu_west_1a,  :elb).should == 'https://eu-west-1.elasticloadbalancing.amazonaws.com'
+      endpoint_for_zone_and_service("eu_west_1b", :elb).should == 'https://eu-west-1.elasticloadbalancing.amazonaws.com'
+      endpoint_for_zone_and_service(:us_west_1b,  :elb).should == 'https://us-west-1.elasticloadbalancing.amazonaws.com'
+      endpoint_for_zone_and_service(:us_east_1b,  :elb).should == 'https://us-east-1.elasticloadbalancing.amazonaws.com'
+    end
+  end
 
   describe "zone_to_awz_region" do
     it "accepts a zone symbol and returns its region" do
@@ -12,6 +24,10 @@ describe Awsborn::AwsConstants do
     end
     it "raise an error if no region found" do
       expect{zone_to_awz_region('santa-northpole-2b')}.to raise_error(Awsborn::UnknownConstantError)
+    end
+    it "returns a region even when a region is given" do
+      zone_to_awz_region('eu-west-1').should == 'eu-west-1'
+      zone_to_awz_region(:eu_west_1).should == 'eu-west-1'
     end
   end
 

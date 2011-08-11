@@ -1,16 +1,10 @@
 module Awsborn
   class Ec2
     extend Forwardable
+    include Awsborn::AwsConstants
     def_delegators :Awsborn, :logger
 
     attr_accessor :instance_id
-
-    class << self
-      def endpoint_for_zone (zone)
-        zone = zone.to_s.sub(/[a-z]$/,'').tr('_','-')
-        "https://#{zone}.ec2.amazonaws.com"
-      end
-    end
 
     def connection
       unless @connection
@@ -28,7 +22,7 @@ module Awsborn
     end
 
     def initialize (zone)
-      @endpoint = self.class.endpoint_for_zone(zone)
+      @endpoint = endpoint_for_zone_and_service(zone, :ec2)
     end
 
     KeyPair = Struct.new :name, :path

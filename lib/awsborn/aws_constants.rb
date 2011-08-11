@@ -14,6 +14,14 @@ module Awsborn
     INSTANCE_TYPES = (INSTANCE_TYPES_32_BIT + INSTANCE_TYPES_64_BIT).uniq
     SYMBOL_CONSTANT_MAP = (AVAILABILITY_ZONES + INSTANCE_TYPES).inject({}) { |memo,str| memo[str.tr('-.','_').to_sym] = str; memo }
 
+    def endpoint_for_zone_and_service (zone, service)
+      region = zone_to_awz_region(zone)
+      case service
+      when :ec2 then "https://#{region}.ec2.amazonaws.com"
+      when :elb then "https://#{region}.elasticloadbalancing.amazonaws.com"
+      end
+    end
+
     def zone_to_awz_region (zone)
       region = zone.to_s.sub(/[a-z]$/,'').tr('_','-')
       raise UnknownConstantError, "Unknown region: #{region} for zone: #{zone}" unless REGIONS.include? region

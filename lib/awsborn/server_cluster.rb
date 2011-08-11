@@ -34,14 +34,19 @@ module Awsborn
       @klass = klass
       @name = name.to_s
       @instances = []
+      @load_balancers = []
       self.class.clusters << self
     end
-    
+
     def domain (*args)
       @domain = args.first unless args.empty?
       @domain
     end
-    
+
+    def load_balancer (name, options={})
+      @load_balancers << Awsborn::LoadBalancer.new(name, options)
+    end
+
     def server (name, options = {})
       options = add_domain_to_ip(options)
       instance = @klass.new name, options
@@ -53,6 +58,7 @@ module Awsborn
       running, missing = requested.partition { |e| e.running? }
       refresh_running(running) if running.any?
       start_missing_instances(missing) if missing.any?
+      update_load_balancing(running) unless @load_balancers.empty?
     end
 
     def refresh_running (instances)
@@ -63,6 +69,12 @@ module Awsborn
       generate_key_pair(instances)
       instances.each { |e| e.start(@key_pair) }
       delete_key_pair(instances)
+    end
+
+    def update_load_balancing(running)
+      @load_balancers.each do |lb|
+        lb.update_with(running).inspect
+      end
     end
 
     def generate_key_pair (instances)
