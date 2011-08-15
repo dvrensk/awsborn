@@ -15,19 +15,19 @@ describe Awsborn::AwsConstants do
     end
   end
 
-  describe "zone_to_awz_region" do
+  describe "zone_to_aws_region" do
     it "accepts a zone symbol and returns its region" do
-      zone_to_awz_region(:eu_west_1a).should == 'eu-west-1'
+      zone_to_aws_region(:eu_west_1a).should == 'eu-west-1'
     end
     it "accepts an aws zone symbol and returns its region" do
-      zone_to_awz_region('eu-west-1a').should == 'eu-west-1'
+      zone_to_aws_region('eu-west-1a').should == 'eu-west-1'
     end
     it "raise an error if no region found" do
-      expect{zone_to_awz_region('santa-northpole-2b')}.to raise_error(Awsborn::UnknownConstantError)
+      expect{zone_to_aws_region('santa-northpole-2b')}.to raise_error(Awsborn::UnknownConstantError)
     end
     it "returns a region even when a region is given" do
-      zone_to_awz_region('eu-west-1').should == 'eu-west-1'
-      zone_to_awz_region(:eu_west_1).should == 'eu-west-1'
+      zone_to_aws_region('eu-west-1').should == 'eu-west-1'
+      zone_to_aws_region(:eu_west_1).should == 'eu-west-1'
     end
   end
 
@@ -67,15 +67,15 @@ describe Awsborn::AwsConstants do
     end
   end
 
-  describe "awz_constant" do
+  describe "aws_constant" do
     it "should look up an availability zone" do
-      awz_constant(:eu_west_1a).should == "eu-west-1a"
+      aws_constant(:eu_west_1a).should == "eu-west-1a"
     end
     it "should look up an instance type" do
-      awz_constant(:m1_large).should == "m1.large"
+      aws_constant(:m1_large).should == "m1.large"
     end
     it "should raise an error if the symbol is unknown" do
-      expect{awz_constant(:unknown_constant)}.to raise_error(Awsborn::UnknownConstantError)
+      expect{aws_constant(:unknown_constant)}.to raise_error(Awsborn::UnknownConstantError)
     end
   end
 

@@ -4,7 +4,7 @@ module Awsborn
     AVAILABILITY_ZONES = %w[
       us-east-1a us-east-1b us-east-1c us-east-1d
       us-west-1a us-west-1b
-      eu-west-1a eu-west-1b
+      eu-west-1a eu-west-1b eu-west-1c
       ap-southeast-1a ap-southeast-1b
       ap-northeast-1a ap-northeast-1b
     ]
@@ -15,14 +15,14 @@ module Awsborn
     SYMBOL_CONSTANT_MAP = (AVAILABILITY_ZONES + INSTANCE_TYPES).inject({}) { |memo,str| memo[str.tr('-.','_').to_sym] = str; memo }
 
     def endpoint_for_zone_and_service (zone, service)
-      region = zone_to_awz_region(zone)
+      region = zone_to_aws_region(zone)
       case service
       when :ec2 then "https://#{region}.ec2.amazonaws.com"
       when :elb then "https://#{region}.elasticloadbalancing.amazonaws.com"
       end
     end
 
-    def zone_to_awz_region (zone)
+    def zone_to_aws_region (zone)
       region = zone.to_s.sub(/[a-z]$/,'').tr('_','-')
       raise UnknownConstantError, "Unknown region: #{region} for zone: #{zone}" unless REGIONS.include? region
       region
@@ -50,7 +50,7 @@ module Awsborn
       type.to_s.tr('.','_').to_sym
     end
 
-    def awz_constant (symbol)
+    def aws_constant (symbol)
       SYMBOL_CONSTANT_MAP[symbol] || raise(UnknownConstantError, "Unknown constant: #{symbol}")
     end
   end

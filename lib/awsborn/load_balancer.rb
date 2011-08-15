@@ -9,7 +9,7 @@ module Awsborn
       @name = name
       @only   = options[:only] || []
       @except = options[:except] || []
-      @region = zone_to_awz_region(options[:region])
+      @region = zone_to_aws_region(options[:region])
       @listeners = options[:listeners] || DEFAULT_LISTENERS
       @sticky_cookies = options[:sticky_cookies] || []
       launch unless running?

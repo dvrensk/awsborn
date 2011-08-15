@@ -23,7 +23,7 @@ module Awsborn
     end
 
     def initialize (zone)
-      @region = zone_to_awz_region(zone)
+      @region = zone_to_aws_region(zone)
       @endpoint = endpoint_for_zone_and_service(@region, :elb)
     end
 
