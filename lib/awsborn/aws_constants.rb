@@ -3,7 +3,7 @@ module Awsborn
 
     AVAILABILITY_ZONES = %w[
       us-east-1a us-east-1b us-east-1c us-east-1d
-      us-west-1a us-west-1b
+      us-west-1a us-west-1b us-west-1c
       eu-west-1a eu-west-1b eu-west-1c
       ap-southeast-1a ap-southeast-1b
       ap-northeast-1a ap-northeast-1b
