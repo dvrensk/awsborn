@@ -325,6 +325,14 @@ Other rake tasks include:
 
 ## Changes
 
+### New in 0.8.1
+
+* Specify health_check for load balancers.
+
+### New in 0.8.0
+
+* Server cluster can have load balancers.
+
 ### New in 0.7.0
 
 * Allow several security groups per server.
