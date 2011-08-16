@@ -11,9 +11,17 @@ describe Awsborn::LoadBalancer do
                        :register_instances => true,
                        :enable_zones => true,
                        :set_load_balancer_listeners => true,
-                       :describe_load_balancer => "description")
+                       :describe_load_balancer => "description",
+                      :configure_health_check => true)
     @listener_fixture = [ { :protocol => :tcp, :load_balancer_port => 123, :instance_port => 123} ]
     @cookies_fixture = [ { :ports => [123], :policy => :disabled } ]
+    @health_check_fixture = {
+      :healthy_threshold => 9,
+      :unhealthy_threshold => 3,
+      :target => "TCP:433",
+      :timeout => 6,
+      :interval => 31
+    }
     Awsborn::Elb.stub!(:new).and_return(@mocked_elb)
   end
   describe "initialize" do
@@ -29,7 +37,8 @@ describe Awsborn::LoadBalancer do
           :only => [:server1, :server2],
           :except => [:server2],
           :listeners => @listener_fixture,
-          :sticky_cookies => @cookies_fixture
+          :sticky_cookies => @cookies_fixture,
+          :health_check => @health_check_fixture
         )
       end
       its(:name)           { should == 'some-name' }
@@ -38,6 +47,7 @@ describe Awsborn::LoadBalancer do
       its(:except)         { should == [:server2] }
       its(:listeners)      { should == @listener_fixture }
       its(:sticky_cookies) { should == @cookies_fixture }
+      its(:health_check_config) { should == @health_check_fixture }
     end
     describe "sets proper default values" do
       subject do
@@ -50,6 +60,19 @@ describe Awsborn::LoadBalancer do
       its(:except)         { should == [] }
       its(:listeners)      { should == Awsborn::LoadBalancer::DEFAULT_LISTENERS }
       its(:sticky_cookies) { should == [] }
+      its(:health_check_config) { should == Awsborn::LoadBalancer::DEFAULT_HEALTH_CONFIG }
+    end
+    it "accepts partial health config" do
+      balancer = Awsborn::LoadBalancer.new(
+        'some-name',
+        :region => :eu_west_1,
+        :health_check => { :target => 'HTTP:80/test.html' }
+      )
+      balancer.health_check_config[:target].should == 'HTTP:80/test.html'
+      [:healthy_threshold, :unhealthy_threshold, :timeout, :interval].each do |other_attribute|
+        balancer.health_check_config[other_attribute].should ==
+          Awsborn::LoadBalancer::DEFAULT_HEALTH_CONFIG[other_attribute]
+      end
     end
   end
 
@@ -170,6 +193,27 @@ describe Awsborn::LoadBalancer do
     end
   end
 
+  describe "health_status" do
+    it "delegates to elb" do
+      @mocked_elb.should_receive(:health_status).with('some-name').and_return('health_status')
+      @balancer = Awsborn::LoadBalancer.new(
+        'some-name',
+        :region => :eu_west_1
+      ).health_status.should == 'health_status'
+    end
+  end
+
+  describe "update_health_config" do
+    it "delegates to elb" do
+      @mocked_elb.should_receive(:configure_health_check).with('some-name', @health_check_fixture)
+      @balancer = Awsborn::LoadBalancer.new(
+        'some-name',
+        :region => :eu_west_1,
+        :health_check => @health_check_fixture
+      ).update_health_config
+    end
+  end
+
   describe "update_listeners" do
     it "delegates to elb" do
       @mocked_elb.should_receive('set_load_balancer_listeners').with('some-name', @listener_fixture)
@@ -254,11 +298,12 @@ describe Awsborn::LoadBalancer do
       @mocked_elb.should_not_receive(:create_load_balancer)
       @balancer.update_with(@new_servers)
     end
-    it "sets new instances, sets new zones, updates listeners and updates sticky cookies" do
+    it "sets instances and new zones and updates listeners, sticky cookies and health config" do
       @balancer.should_receive(:instances=).with(['i-00000001', 'i-00000002'])
       @balancer.should_receive(:zones=).with(['eu-west-1a', 'eu-west-1b'])
       @balancer.should_receive(:update_listeners)
       @balancer.should_receive(:update_sticky_cookies)
+      @balancer.should_receive(:update_health_config)
       @balancer.should_receive(:description).and_return('description')
       @balancer.update_with(@new_servers).should == 'description'
     end
@@ -269,6 +314,7 @@ describe Awsborn::LoadBalancer do
       @balancer.should_receive(:zones=).with(['eu-west-1a'])
       @balancer.should_receive(:update_listeners)
       @balancer.should_receive(:update_sticky_cookies)
+      @balancer.should_receive(:update_health_config)
       @balancer.should_receive(:description).and_return('description')
       @balancer.update_with(@new_servers).should == 'description'
     end
@@ -279,6 +325,7 @@ describe Awsborn::LoadBalancer do
       @balancer.should_receive(:zones=).with(['eu-west-1b'])
       @balancer.should_receive(:update_listeners)
       @balancer.should_receive(:update_sticky_cookies)
+      @balancer.should_receive(:update_health_config)
       @balancer.should_receive(:description).and_return('description')
       @balancer.update_with(@new_servers).should == 'description'
     end

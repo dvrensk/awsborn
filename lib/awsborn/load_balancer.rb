@@ -2,9 +2,16 @@ module Awsborn
   class LoadBalancer
 
     include Awsborn::AwsConstants
-    attr_accessor :name, :only, :except, :region, :listeners, :sticky_cookies
+    attr_accessor :name, :only, :except, :region, :listeners, :sticky_cookies, :health_check_config
 
     DEFAULT_LISTENERS = [ { :protocol => :http, :load_balancer_port => 80, :instance_port => 80} ]
+    DEFAULT_HEALTH_CONFIG = {
+      :healthy_threshold => 10,
+      :unhealthy_threshold => 2,
+      :target => "TCP:80",
+      :timeout => 5,
+      :interval => 30
+    }
     def initialize (name, options={})
       @name = name
       @only   = options[:only] || []
@@ -12,6 +19,7 @@ module Awsborn
       @region = zone_to_aws_region(options[:region])
       @listeners = options[:listeners] || DEFAULT_LISTENERS
       @sticky_cookies = options[:sticky_cookies] || []
+      @health_check_config = DEFAULT_HEALTH_CONFIG.merge(options[:health_check] || {})
     end
 
     def elb
@@ -56,6 +64,9 @@ module Awsborn
       elb.create_load_balancer(@name)
     end
 
+    def health_status
+      elb.health_status(@name)
+    end
 
     def update_listeners
       elb.set_load_balancer_listeners(@name, @listeners)
@@ -79,6 +90,10 @@ module Awsborn
       end
     end
 
+    def update_health_config
+      elb.configure_health_check(@name, @health_check_config)
+    end
+
     def update_with (new_servers)
       launch unless running?
 
@@ -93,6 +108,7 @@ module Awsborn
 
       update_listeners
       update_sticky_cookies
+      update_health_config
 
       self.description
     end

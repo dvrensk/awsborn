@@ -251,6 +251,21 @@ describe Awsborn::Elb do
         @elb.disable_zones('some-name', ['eu-west-1a', 'eu-west-1b'])
       end
     end
+
+    describe "configure_health_check" do
+      it "forwards to ElbInterface" do
+        @mock_interface.should_receive(:configure_health_check).with('some-name', 'health-check-config')
+        @elb.configure_health_check('some-name', 'health-check-config')
+      end
+    end
+
+    describe "health_status" do
+      it "returns the health status of each instance of the load balancer" do
+        @mock_interface.should_receive(:describe_load_balancers).with('some-name').and_return([{:instances => 'instances'}])
+        @mock_interface.should_receive(:describe_instance_health).with('some-name', 'instances').and_return("health_status")
+        @elb.health_status('some-name')
+      end
+    end
   end
 end
 

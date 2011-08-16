@@ -112,6 +112,15 @@ module Awsborn
       connection.disable_availability_zones_for_load_balancer(balancer_name, *zones)
     end
 
+    def configure_health_check (balancer_name, health_check)
+      logger.debug "Setting health check on load balancer #{balancer_name}"
+      connection.configure_health_check(balancer_name, health_check)
+    end
+
+    def health_status (balancer_name)
+      connection.describe_instance_health(balancer_name, *instances(balancer_name))
+    end
+
     protected
 
     def existing_app_cookie_policies (balancer_name)

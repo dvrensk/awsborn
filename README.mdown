@@ -116,6 +116,9 @@ Optional keys for load_balancer:
 * `:only` -- a list of server names to which the load balancer is
 	restricted.
 * `:except` -- a list of servers that the load balancer should ignore.
+* `:health_check` -- a hash containing full or partial health check
+  configuration. Health check can contain `:healthy_threshold`,
+  `:unhealthy_threshold`, `:target`, `:timeout` and `:interval`
 * `:listeners` -- a list of listener definitions for the load balancer. For instance:
     `{ :protocol => :http, :load_balancer_port => 80,  :instance_port => 80 }`
 * `:sticky_cookies` -- a list of ports/cookie policies that the load balancer
@@ -131,6 +134,13 @@ Example:
       load_balancer 'test-balancer',
         :region => :eu_west_1,
         :only => [:cluster_test_1, :cluster_test_2],
+        :health_check => {
+          :target => 'HTTP:80/index.html',
+          :timeout => 6,
+          :interval => 31,
+          :unhealthy_threshold => 3,
+          :healthy_threshold => 9
+        },
         :listeners => [
           { :protocol => :http, :load_balancer_port => 80,  :instance_port => 80},
           { :protocol => :tcp,  :load_balancer_port => 443, :instance_port => 443}
