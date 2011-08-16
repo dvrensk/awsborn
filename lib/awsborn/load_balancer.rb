@@ -12,7 +12,6 @@ module Awsborn
       @region = zone_to_aws_region(options[:region])
       @listeners = options[:listeners] || DEFAULT_LISTENERS
       @sticky_cookies = options[:sticky_cookies] || []
-      launch unless running?
     end
 
     def elb
@@ -81,6 +80,8 @@ module Awsborn
     end
 
     def update_with (new_servers)
+      launch unless running?
+
       servers_to_be_balanced = new_servers
       servers_to_be_balanced =
         servers_to_be_balanced.select{|s| @only.include?(s.name)}    unless @only.empty?

@@ -5,7 +5,13 @@ describe Awsborn::LoadBalancer do
     @mocked_elb = mock(:elb,
                        :running? => false,
                        :remove_all_cookie_policies => true,
-                       :create_load_balancer => {})
+                       :create_load_balancer => {},
+                       :instances => [],
+                       :zones => [],
+                       :register_instances => true,
+                       :enable_zones => true,
+                       :set_load_balancer_listeners => true,
+                       :describe_load_balancer => "description")
     @listener_fixture = [ { :protocol => :tcp, :load_balancer_port => 123, :instance_port => 123} ]
     @cookies_fixture = [ { :ports => [123], :policy => :disabled } ]
     Awsborn::Elb.stub!(:new).and_return(@mocked_elb)
@@ -14,22 +20,6 @@ describe Awsborn::LoadBalancer do
     it "requires a valid region option" do
       expect { Awsborn::LoadBalancer.new('some-name') }.to raise_error
       expect { Awsborn::LoadBalancer.new('some-name', :region => :blabla) }.to raise_error
-    end
-    it "launches the load balancer if not running" do
-      @mocked_elb.should_receive(:running?).with('some-name').and_return(false)
-      @mocked_elb.should_receive(:create_load_balancer).with('some-name').and_return(nil)
-      @balancer = Awsborn::LoadBalancer.new(
-        'some-name',
-        :region => :eu_west_1
-      )
-    end
-    it "does not launch the load balancer if running" do
-      @mocked_elb.should_receive(:running?).with('some-name').and_return(true)
-      @mocked_elb.should_not_receive(:create_load_balancer)
-      @balancer = Awsborn::LoadBalancer.new(
-        'some-name',
-        :region => :eu_west_1
-      )
     end
     describe "sets all attributes properly" do
       subject do
@@ -253,6 +243,16 @@ describe Awsborn::LoadBalancer do
         mock(:server1, :name => :server1, :instance_id => 'i-00000001', :zone => :eu_west_1a),
         mock(:server1, :name => :server2, :instance_id => 'i-00000002', :zone => :eu_west_1b)
       ]
+    end
+    it "launches the load balancer if not running" do
+      @mocked_elb.should_receive(:running?).with('some-name').and_return(false)
+      @mocked_elb.should_receive(:create_load_balancer).with('some-name').and_return(nil)
+      @balancer.update_with(@new_servers)
+    end
+    it "does not launch the load balancer if running" do
+      @mocked_elb.should_receive(:running?).with('some-name').and_return(true)
+      @mocked_elb.should_not_receive(:create_load_balancer)
+      @balancer.update_with(@new_servers)
     end
     it "sets new instances, sets new zones, updates listeners and updates sticky cookies" do
       @balancer.should_receive(:instances=).with(['i-00000001', 'i-00000002'])
