@@ -50,6 +50,10 @@ module Awsborn
       describe_load_balancer(balancer_name)[:availability_zones]
     end
 
+    def canonical_hosted_zone_name_id (balancer_name)
+      describe_load_balancer(balancer_name)[:canonical_hosted_zone_name_id]
+    end
+
     def create_load_balancer (balancer_name)
       logger.debug "Creating load balancer #{balancer_name}"
       connection.create_load_balancer(balancer_name, [@region+'a'], [])

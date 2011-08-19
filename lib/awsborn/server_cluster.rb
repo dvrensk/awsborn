@@ -2,7 +2,7 @@ module Awsborn
   class ServerCluster
     include Enumerable
 
-    attr_accessor :name
+    attr_accessor :name, :load_balancers
 
     def self.build (klass, name, &block)
       cluster = new(klass, name)
@@ -44,6 +44,7 @@ module Awsborn
     end
 
     def load_balancer (name, options={})
+      options = add_domain_to_dns_alias(options)
       @load_balancers << Awsborn::LoadBalancer.new(name, options)
     end
 
@@ -73,8 +74,15 @@ module Awsborn
 
     def update_load_balancing(running)
       @load_balancers.each do |lb|
-        lb.update_with(running).inspect
+        lb.launch_or_update(running)
       end
+    end
+
+    def load_balancer_info
+      info = load_balancers.map do |lb|
+        lb.dns_info
+      end.compact.join("\n")
+      info.empty? ? nil : info
     end
 
     def generate_key_pair (instances)
@@ -96,9 +104,15 @@ module Awsborn
     protected
     
     def add_domain_to_ip (hash)
-      if @domain && hash.has_key?(:ip) && ! hash[:ip].include?('.')
-        ip = [hash[:ip], @domain].join('.')
-        hash.merge(:ip => ip)
+      add_domain_to_key(:ip, hash)
+    end
+    def add_domain_to_dns_alias (hash)
+      add_domain_to_key(:dns_alias, hash)
+    end
+    def add_domain_to_key (key, hash)
+      if @domain && hash.has_key?(key) && ! hash[key].include?('.')
+        expanded = [hash[key], @domain].join('.')
+        hash.merge(key => expanded)
       else
         hash
       end

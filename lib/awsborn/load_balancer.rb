@@ -2,7 +2,7 @@ module Awsborn
   class LoadBalancer
 
     include Awsborn::AwsConstants
-    attr_accessor :name, :only, :except, :region, :listeners, :sticky_cookies, :health_check_config
+    attr_accessor :name, :only, :except, :region, :listeners, :sticky_cookies, :health_check_config, :dns_alias
 
     DEFAULT_LISTENERS = [ { :protocol => :http, :load_balancer_port => 80, :instance_port => 80} ]
     DEFAULT_HEALTH_CONFIG = {
@@ -12,6 +12,7 @@ module Awsborn
       :timeout => 5,
       :interval => 30
     }
+
     def initialize (name, options={})
       @name = name
       @only   = options[:only] || []
@@ -20,13 +21,14 @@ module Awsborn
       @listeners = options[:listeners] || DEFAULT_LISTENERS
       @sticky_cookies = options[:sticky_cookies] || []
       @health_check_config = DEFAULT_HEALTH_CONFIG.merge(options[:health_check] || {})
+      @dns_alias = options[:dns_alias]
     end
 
     def elb
       @elb ||= Elb.new(@region)
     end
 
-    def dns_name
+    def aws_dns_name
       elb.dns_name(@name)
     end
 
@@ -34,11 +36,14 @@ module Awsborn
       elb.instances(@name)
     end
 
+    def canonical_hosted_zone_name_id
+      elb.canonical_hosted_zone_name_id(@name)
+    end
+
     def instances= (new_instances)
       previous_instances = self.instances
       register_instances(new_instances - previous_instances)
       deregister_instances(previous_instances - new_instances)
-      self.instances
     end
 
     def zones
@@ -49,7 +54,6 @@ module Awsborn
       previous_zones = self.zones
       enable_zones(new_zones - previous_zones)
       disable_zones(previous_zones - new_zones)
-      self.zones
     end
 
     def description
@@ -94,26 +98,57 @@ module Awsborn
       elb.configure_health_check(@name, @health_check_config)
     end
 
-    def update_with (new_servers)
+    def launch_or_update (running_servers)
       launch unless running?
 
-      servers_to_be_balanced = new_servers
-      servers_to_be_balanced =
-        servers_to_be_balanced.select{|s| @only.include?(s.name)}    unless @only.empty?
-      servers_to_be_balanced =
-        servers_to_be_balanced.reject{|s| @except.include?(s.name)}  unless @except.empty?
+      set_instances_to_selected(running_servers)
+      update_settings
 
-      self.instances = servers_to_be_balanced.map{|s| s.instance_id }
-      self.zones     = servers_to_be_balanced.map{|s| symbol_to_aws_zone(s.zone) }.uniq
+      configure_dns if @dns_alias
+    end
 
-      update_listeners
-      update_sticky_cookies
-      update_health_config
+    def configure_dns
+      route53.create_zone @dns_alias unless route53.zone_exists?(@dns_alias)
+      case route53.alias_target(@dns_alias)
+      when aws_dns_name
+        # It is already good
+      when nil
+        route53.add_alias_record(:alias => @dns_alias, :lb_fqdn => aws_dns_name, :lb_zone => canonical_hosted_zone_name_id)
+      else
+        route53.remove_alias_records(@dns_alias)
+        route53.add_alias_record(:alias => @dns_alias, :lb_fqdn => aws_dns_name, :lb_zone => canonical_hosted_zone_name_id)
+      end
+    end
 
-      self.description
+    def route53
+      @route53 ||= Route53.new
+    end
+
+    def dns_info
+      if dns_alias
+        route53.zone_for(dns_alias).inspect
+      end
     end
 
     protected
+
+    def set_instances_to_selected (running_servers)
+      servers_to_be_balanced = select_servers(running_servers)
+      self.instances = servers_to_be_balanced.map {|s| s.instance_id }
+      self.zones     = servers_to_be_balanced.map {|s| symbol_to_aws_zone(s.zone) }.uniq
+    end
+
+    def select_servers (servers)
+      servers = servers.select {|s| @only.include?(s.name)}    unless @only.empty?
+      servers = servers.reject {|s| @except.include?(s.name)}  unless @except.empty?
+      servers
+    end
+
+    def update_settings
+      update_listeners
+      update_sticky_cookies
+      update_health_config
+    end
 
     def set_disabled_cookie_policy(ports)
       # Do nothing

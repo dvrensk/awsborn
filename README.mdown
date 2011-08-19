@@ -113,6 +113,9 @@ Mandatory keys for load_balancer:
 
 Optional keys for load_balancer:
 
+* `:dns_alias` -- a domain name to be tied to the load balancer in Route 53.
+    May be a simple name (`www`) in which case the cluster domain will be added,
+    or a full domain name.
 * `:only` -- a list of server names to which the load balancer is
 	restricted.
 * `:except` -- a list of servers that the load balancer should ignore.

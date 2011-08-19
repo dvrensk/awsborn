@@ -74,6 +74,13 @@ describe Awsborn::Elb do
       end
     end
 
+    describe "canonical_hosted_zone_name_id" do
+      it "extracts zone id from description" do
+        @mock_interface.should_receive(:describe_load_balancers).with('some-name').and_return([{:canonical_hosted_zone_name_id => 'Z000'}])
+        @elb.canonical_hosted_zone_name_id('some-name').should == 'Z000'
+      end
+    end
+
     describe "create_load_balancer" do
       it "forwards to ElbInterface with a temporary zone and no listeners" do
         @mock_interface.should_receive(:create_load_balancer).with('some-name', ['eu-west-1a'], [])

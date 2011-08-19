@@ -10,7 +10,7 @@ begin
     gem.email = "david@icehouse.se"
     gem.homepage = "http://github.com/icehouse/awsborn"
     gem.authors = ["David Vrensk", "Jean-Louis Giordano"]
-    gem.add_dependency "right_aws", ">= 2.1.0"
+    gem.add_dependency "icehouse-right_aws", ">= 2.2.0"
     gem.add_dependency "json_pure", ">= 1.2.3"
     gem.add_dependency "rake"
     gem.add_development_dependency "rspec", ">= 2.6.0"

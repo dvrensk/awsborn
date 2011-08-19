@@ -12,7 +12,16 @@ describe Awsborn::LoadBalancer do
                        :enable_zones => true,
                        :set_load_balancer_listeners => true,
                        :describe_load_balancer => "description",
-                      :configure_health_check => true)
+                       :dns_name => 'asdf',
+                       :configure_health_check => true)
+    Awsborn::Elb.stub!(:new).and_return(@mocked_elb)
+
+    @mocked_route53 = mock(:route53,
+      :zone_exists? => true,
+      :add_alias_record => true,
+      :alias_target => 'some-name-0001.lb.amz.com'
+    )
+
     @listener_fixture = [ { :protocol => :tcp, :load_balancer_port => 123, :instance_port => 123} ]
     @cookies_fixture = [ { :ports => [123], :policy => :disabled } ]
     @health_check_fixture = {
@@ -22,8 +31,8 @@ describe Awsborn::LoadBalancer do
       :timeout => 6,
       :interval => 31
     }
-    Awsborn::Elb.stub!(:new).and_return(@mocked_elb)
   end
+
   describe "initialize" do
     it "requires a valid region option" do
       expect { Awsborn::LoadBalancer.new('some-name') }.to raise_error
@@ -33,7 +42,8 @@ describe Awsborn::LoadBalancer do
       subject do
         @balancer = Awsborn::LoadBalancer.new(
           'some-name',
-          :region => :eu_west_1a,
+          :dns_alias => 'www.example.net',
+          :region => :eu_west_1,
           :only => [:server1, :server2],
           :except => [:server2],
           :listeners => @listener_fixture,
@@ -42,6 +52,7 @@ describe Awsborn::LoadBalancer do
         )
       end
       its(:name)           { should == 'some-name' }
+      its(:dns_alias)      { should == 'www.example.net' }
       its(:region)         { should == 'eu-west-1' }
       its(:only)           { should == [:server1, :server2] }
       its(:except)         { should == [:server2] }
@@ -76,16 +87,15 @@ describe Awsborn::LoadBalancer do
     end
   end
 
-  describe "dns_name" do
+  describe "aws_dns_name" do
     it "delegates to elb" do
       @mocked_elb.should_receive(:dns_name).with('some-name').and_return('dns-name')
       @balancer = Awsborn::LoadBalancer.new(
         'some-name',
         :region => :eu_west_1
-      ).dns_name.should == 'dns-name'
+      ).aws_dns_name.should == 'dns-name'
     end
   end
-
 
   describe "instances" do
     it "delegates to elb" do
@@ -275,7 +285,7 @@ describe Awsborn::LoadBalancer do
     end
   end
 
-  describe "update_with" do
+  describe "launch_or_update" do
     before do
       @balancer = Awsborn::LoadBalancer.new(
         'some-name',
@@ -291,12 +301,12 @@ describe Awsborn::LoadBalancer do
     it "launches the load balancer if not running" do
       @mocked_elb.should_receive(:running?).with('some-name').and_return(false)
       @mocked_elb.should_receive(:create_load_balancer).with('some-name').and_return(nil)
-      @balancer.update_with(@new_servers)
+      @balancer.launch_or_update(@new_servers)
     end
     it "does not launch the load balancer if running" do
       @mocked_elb.should_receive(:running?).with('some-name').and_return(true)
       @mocked_elb.should_not_receive(:create_load_balancer)
-      @balancer.update_with(@new_servers)
+      @balancer.launch_or_update(@new_servers)
     end
     it "sets instances and new zones and updates listeners, sticky cookies and health config" do
       @balancer.should_receive(:instances=).with(['i-00000001', 'i-00000002'])
@@ -304,8 +314,7 @@ describe Awsborn::LoadBalancer do
       @balancer.should_receive(:update_listeners)
       @balancer.should_receive(:update_sticky_cookies)
       @balancer.should_receive(:update_health_config)
-      @balancer.should_receive(:description).and_return('description')
-      @balancer.update_with(@new_servers).should == 'description'
+      @balancer.launch_or_update(@new_servers)
     end
     it "takes into account the :only option" do
       @balancer.only = [:server1]
@@ -315,8 +324,7 @@ describe Awsborn::LoadBalancer do
       @balancer.should_receive(:update_listeners)
       @balancer.should_receive(:update_sticky_cookies)
       @balancer.should_receive(:update_health_config)
-      @balancer.should_receive(:description).and_return('description')
-      @balancer.update_with(@new_servers).should == 'description'
+      @balancer.launch_or_update(@new_servers)
     end
     it "takes into account the :except option" do
       @balancer.except = [:server1]
@@ -327,9 +335,55 @@ describe Awsborn::LoadBalancer do
       @balancer.should_receive(:update_sticky_cookies)
       @balancer.should_receive(:update_health_config)
       @balancer.should_receive(:description).and_return('description')
-      @balancer.update_with(@new_servers).should == 'description'
+      @balancer.launch_or_update(@new_servers)
+      @balancer.description.should == 'description'
+    end
+    it "configures dns" do
+      @balancer.dns_alias = 'www.example.net'
+      @balancer.should_receive(:configure_dns)
+      @balancer.launch_or_update(@new_servers)
     end
   end
 
-end
+  describe "configure_dns" do
+    before do
+      @balancer = Awsborn::LoadBalancer.new('some-name', :region => :eu_west_1, :dns_alias => 'www.example.net')
+      @balancer.stub!(:route53).and_return(@mocked_route53)
+      @balancer.stub!(:aws_dns_name).and_return('some-name-0001.lb.amz.com')
+      @balancer.stub!(:canonical_hosted_zone_name_id).and_return('Z0000000000')
+    end
 
+    it "creates the zone if it does not exist" do
+      @mocked_route53.should_receive(:create_zone).with('www.example.net')
+      @mocked_route53.should_receive(:zone_exists?).with('www.example.net').and_return(false)
+      @balancer.configure_dns
+    end
+
+    it "doesn't create the zone if it already exists" do
+      @mocked_route53.should_not_receive(:create_zone)
+      @mocked_route53.should_receive(:zone_exists?).with('www.example.net').and_return(true)
+      @balancer.configure_dns
+    end
+
+    it "adds the load balancer name as an Alias record" do
+      @mocked_route53.should_receive(:alias_target).with('www.example.net').and_return(nil)
+      @mocked_route53.should_receive(:add_alias_record).with(:alias => 'www.example.net',
+        :lb_fqdn => 'some-name-0001.lb.amz.com', :lb_zone => 'Z0000000000')
+      @balancer.configure_dns
+    end
+
+    it "removes an outdated alias record" do
+      @mocked_route53.should_receive(:alias_target).with('www.example.net').and_return('old-name-1.lb.amz.com')
+      @mocked_route53.should_receive(:remove_alias_records).with('www.example.net')
+      @mocked_route53.should_receive(:add_alias_record).with(:alias => 'www.example.net',
+        :lb_fqdn => 'some-name-0001.lb.amz.com', :lb_zone => 'Z0000000000')
+      @balancer.configure_dns
+    end
+
+    it "doesn't touch the records if they are OK" do
+      @mocked_route53.should_not_receive(:add_alias_record)
+      @mocked_route53.should_not_receive(:remove_alias_records)
+      @balancer.configure_dns
+    end
+  end
+end
