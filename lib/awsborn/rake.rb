@@ -26,8 +26,9 @@ module Awsborn
 
       desc "Start all servers (or host=name1,name2) but don't run chef."
       task :start do |t,args|
-        cluster(args).launch get_hosts(args)
-        info = cluster.load_balancer_info
+        c = cluster(args)
+        c.launch get_hosts(args)
+        info = c.load_balancer_info
         puts info if info
       end
 
