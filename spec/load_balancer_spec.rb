@@ -21,6 +21,7 @@ describe Awsborn::LoadBalancer do
       :add_alias_record => true,
       :alias_target => 'some-name-0001.lb.amz.com'
     )
+    Awsborn::Route53.stub!(:new).and_return(@mocked_route53)
 
     @listener_fixture = [ { :protocol => :tcp, :load_balancer_port => 123, :instance_port => 123} ]
     @cookies_fixture = [ { :ports => [123], :policy => :disabled } ]
@@ -348,7 +349,6 @@ describe Awsborn::LoadBalancer do
   describe "configure_dns" do
     before do
       @balancer = Awsborn::LoadBalancer.new('some-name', :region => :eu_west_1, :dns_alias => 'www.example.net')
-      @balancer.stub!(:route53).and_return(@mocked_route53)
       @balancer.stub!(:aws_dns_name).and_return('some-name-0001.lb.amz.com')
       @balancer.stub!(:canonical_hosted_zone_name_id).and_return('Z0000000000')
     end
@@ -384,6 +384,20 @@ describe Awsborn::LoadBalancer do
       @mocked_route53.should_not_receive(:add_alias_record)
       @mocked_route53.should_not_receive(:remove_alias_records)
       @balancer.configure_dns
+    end
+  end
+
+  describe "dns_info" do
+    it "forwards to route53 if dns_alias is present" do
+      @balancer = Awsborn::LoadBalancer.new(
+        'some-name',
+        :region => :eu_west_1a,
+        :dns_alias => 'my-awesome-site.example.com.'
+      )
+      @mocked_route53.should_receive(:zone_for).
+                      with('my-awesome-site.example.com.').
+                      and_return('pasta banana')
+      @balancer.dns_info.should == 'pasta banana'
     end
   end
 end

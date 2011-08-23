@@ -81,7 +81,7 @@ module Awsborn
     def load_balancer_info
       info = load_balancers.map do |lb|
         lb.dns_info
-      end.compact.join("\n")
+      end.compact
       info.empty? ? nil : info
     end
 

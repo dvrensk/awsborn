@@ -16,17 +16,17 @@ module Awsborn
     end
 
     def zone_exists? (name)
-      !! zone_for(name)
+      !! zone_overview_for(name)
     end
 
     def zone_for (name)
-      name = with_final_dot(name)
-      zones = connection.list_hosted_zones
-      zones.detect { |zone| zone[:name] == name }
+      zone_id = zone_id_for(name)
+      connection.get_hosted_zone(zone_id) if zone_id
     end
 
     def zone_id_for (name)
-      zone_for(name)[:aws_id]
+      overview = zone_overview_for(name)
+      overview[:aws_id] if overview
     end
 
     def create_zone (name)
@@ -53,6 +53,14 @@ module Awsborn
       zone = zone_id_for(name)
       alias_records = connection.list_resource_record_sets(zone).select { |rr| rr[:name] == name && rr[:alias_target] }
       connection.delete_resource_record_sets(zone, alias_records)
+    end
+
+    private
+
+    def zone_overview_for (name)
+      name = with_final_dot(name)
+      zones = connection.list_hosted_zones
+      zone = zones.detect { |zone| zone[:name] == name }
     end
 
     def with_final_dot (name)

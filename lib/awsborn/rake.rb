@@ -29,7 +29,16 @@ module Awsborn
         c = cluster(args)
         c.launch get_hosts(args)
         info = c.load_balancer_info
-        puts info if info
+        print_required_dns_setting(info) if info
+      end
+
+      def print_required_dns_setting (info)
+        puts "Make sure those NS records are present in your DNS settings:"
+        puts(info.map do |dns_entry|
+          dns_entry[:name_servers].map do |ns|
+            "#{dns_entry[:name]}\tIN\tNS\t#{ns}."
+          end
+        end.join("\n"))
       end
 
       desc "Update .ssh/known_hosts with data from all servers (or host=host1,host2)"

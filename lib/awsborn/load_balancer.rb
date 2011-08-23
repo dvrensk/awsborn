@@ -126,7 +126,7 @@ module Awsborn
 
     def dns_info
       if dns_alias
-        route53.zone_for(dns_alias).inspect
+        route53.zone_for(dns_alias)
       end
     end
 
