@@ -28,22 +28,37 @@ module Awsborn
       @elb ||= Elb.new(@region)
     end
 
-    def aws_dns_name
-      elb.dns_name(@name)
+    def route53
+      @route53 ||= Route53.new
     end
 
-    def instances
-      elb.instances(@name)
+    def ec2
+      @ec2 ||= Ec2.new(@region)
+    end
+
+    def aws_dns_name
+      elb.dns_name(@name)
     end
 
     def canonical_hosted_zone_name_id
       elb.canonical_hosted_zone_name_id(@name)
     end
 
+    def instances
+      elb.instances(@name)
+    end
+
     def instances= (new_instances)
       previous_instances = self.instances
       register_instances(new_instances - previous_instances)
       deregister_instances(previous_instances - new_instances)
+    end
+
+    def instances_dns_names
+      instances.map do |instance_id|
+        ec2.instance_id = instance_id
+        (ec2.describe_instance || {})[:dns_name]
+      end.compact
     end
 
     def zones
@@ -118,10 +133,6 @@ module Awsborn
         route53.remove_alias_records(@dns_alias)
         route53.add_alias_record(:alias => @dns_alias, :lb_fqdn => aws_dns_name, :lb_zone => canonical_hosted_zone_name_id)
       end
-    end
-
-    def route53
-      @route53 ||= Route53.new
     end
 
     def dns_info

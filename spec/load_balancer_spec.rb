@@ -16,6 +16,9 @@ describe Awsborn::LoadBalancer do
                        :configure_health_check => true)
     Awsborn::Elb.stub!(:new).and_return(@mocked_elb)
 
+    @mocked_ec2 = mock(:ec2)
+    Awsborn::Ec2.stub!(:new).and_return(@mocked_ec2)
+
     @mocked_route53 = mock(:route53,
       :zone_exists? => true,
       :add_alias_record => true,
@@ -138,6 +141,57 @@ describe Awsborn::LoadBalancer do
       @mocked_elb.should_receive(:register_instances).with('some-name', ['i-00000003'])
       @mocked_elb.should_receive(:deregister_instances).with('some-name', ['i-00000001'])
       @balancer.instances = ['i-00000002', 'i-00000003']
+    end
+  end
+
+  describe "instances_dns_names" do
+    before do
+      @balancer = Awsborn::LoadBalancer.new(
+        'some-name',
+        :region => :eu_west_1
+      )
+      @desc_fixture = {
+        :private_ip_address    => "10.240.7.99",
+        :aws_image_id          => "ami-c2a3f5d4",
+        :ip_address            => "174.129.134.109",
+        :dns_name              => "ec2-174-129-134-109.compute-1.amazonaws.com",
+        :aws_instance_type     => "m1.small",
+        :aws_owner             => "826693181925",
+        :root_device_name      => "/dev/sda1",
+        :instance_class        => "elastic",
+        :aws_state             => "running",
+        :private_dns_name      => "domU-12-31-39-04-00-95.compute-1.internal",
+        :aws_reason            => "",
+        :aws_launch_time       => "2009-11-18T14:03:25.000Z",
+        :aws_reservation_id    => "r-54d38542",
+        :aws_state_code        => 16,
+        :ami_launch_index      => "0",
+        :aws_availability_zone => "us-east-1a",
+        :aws_groups            => ["default"],
+        :monitoring_state      => "disabled",
+        :aws_product_codes     => [],
+        :ssh_key_name          => "",
+        :block_device_mappings => [],
+        :aws_instance_id       => "i-8ce84ae4"
+      }
+    end
+    it "returns a list of the dns names of the instances of the load balancer" do
+      desc1 = @desc_fixture.merge(:aws_instance_id => 'i-00000001', :dns_name => 'server1.example.com')
+      desc2 = @desc_fixture.merge(:aws_instance_id => 'i-00000002', :dns_name => 'server2.example.com')
+      @mocked_elb.should_receive(:instances).with('some-name').and_return(['i-00000001', 'i-00000002'])
+      @mocked_ec2.should_receive(:instance_id=).with('i-00000001')
+      @mocked_ec2.should_receive(:describe_instance).and_return(desc1)
+      @mocked_ec2.should_receive(:instance_id=).with('i-00000002')
+      @mocked_ec2.should_receive(:describe_instance).and_return(desc2)
+      @balancer.instances_dns_names.should == ['server1.example.com', 'server2.example.com']
+    end
+    it "returns empty list if no description is available" do
+      @mocked_elb.should_receive(:instances).with('some-name').and_return(['i-00000001', 'i-00000002'])
+      @mocked_ec2.should_receive(:instance_id=).with('i-00000001')
+      @mocked_ec2.should_receive(:describe_instance).and_return(nil)
+      @mocked_ec2.should_receive(:instance_id=).with('i-00000002')
+      @mocked_ec2.should_receive(:describe_instance).and_return(nil)
+      @balancer.instances_dns_names.should be_empty
     end
   end
 
