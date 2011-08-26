@@ -302,8 +302,8 @@ describe Awsborn::LoadBalancer do
         ]
       )
       @mocked_elb.should_receive(:remove_all_cookie_policies).with('some-name')
-      @mocked_elb.should_receive(:set_app_sticky_cookie).with('some-name', [33], 'some_cookie')
-      @mocked_elb.should_receive(:set_lb_sticky_cookie).with('some-name', [44], 42)
+      @mocked_elb.should_receive(:set_app_cookie_policy).with('some-name', [33], 'some_cookie')
+      @mocked_elb.should_receive(:set_lb_cookie_policy).with('some-name', [44], 42)
 
       @balancer.update_sticky_cookies
     end

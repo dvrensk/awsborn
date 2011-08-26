@@ -167,12 +167,12 @@ module Awsborn
 
     def set_app_cookie_policy(ports, cookie_name)
       raise ":cookie_name is missing" if cookie_name.nil?
-      elb.set_app_sticky_cookie(@name, ports, cookie_name)
+      elb.set_app_cookie_policy(@name, ports, cookie_name)
     end
 
     def set_lb_cookie_policy(ports, expiration_period)
       raise ":expiration_period is missing" if expiration_period.nil?
-      elb.set_lb_sticky_cookie(@name, ports, expiration_period.to_i)
+      elb.set_lb_cookie_policy(@name, ports, expiration_period.to_i)
     end
 
     def register_instances (instances)
