@@ -87,12 +87,39 @@ module Awsborn
 
       desc "List running servers"
       task :list do |t,args|
-        running = cluster(args).select { |server| server.running? }
-        max_name_length = running.map { |server| server.name.to_s.size }.max
-        running.each do |server|
-          h = server.describe_instance
-          puts "%-#{max_name_length}s -- %s -- %s -- %s (%s) %s" %
-            [server.name, server.host_name, h[:aws_availability_zone], h[:aws_instance_type], h[:architecture], h[:aws_instance_id]]
+        # Disable annoying "Waiting for console output.."
+        Awsborn.verbose = false
+
+        cluster_name = args[:c] || args[:cluster]
+        if cluster_name
+          clusters = Awsborn::ServerCluster.clusters.select {|cluster| cluster.name = args}
+        else
+          clusters = Awsborn::ServerCluster.clusters
+        end
+
+        clusters.each do |cluster|
+          servers = cluster.select { |server| server.running? }
+          balancers = cluster.load_balancers.select { |balancer| balancer.running? }
+
+          next if servers.length == 0 && balancers.length == 0
+
+          cluster_header = "Cluster: #{cluster.name}"
+          puts cluster_header
+          puts '=' * cluster_header.length
+
+          balancers.each do |balancer|
+            desc = balancer.description
+            puts "Balancer: %s -- %s -- %s" % [balancer.name, balancer.dns_alias, desc[:availability_zones].join(' ')]
+          end
+
+          max_name_length = servers.map { |server| server.name.to_s.size }.max
+          servers.each do |server|
+            h = server.describe_instance
+            puts "Server:   %-#{max_name_length}s -- %s -- %s -- %s (%s) %s" %
+              [server.name, server.host_name, h[:aws_availability_zone], h[:aws_instance_type], h[:architecture], h[:aws_instance_id]]
+          end
+
+          puts
         end
       end
 
