@@ -101,7 +101,7 @@ module Awsborn
           servers = cluster.select { |server| server.running? }
           balancers = cluster.load_balancers.select { |balancer| balancer.running? }
 
-          next if servers.length == 0 && balancers.length == 0
+          next if servers.empty? && balancers.empty?
 
           cluster_header = "Cluster: #{cluster.name}"
           puts cluster_header
