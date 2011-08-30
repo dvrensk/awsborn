@@ -92,7 +92,7 @@ module Awsborn
 
         cluster_name = args[:c] || args[:cluster]
         if cluster_name
-          clusters = Awsborn::ServerCluster.clusters.select {|cluster| cluster.name = args}
+          clusters = Awsborn::ServerCluster.clusters.select {|cluster| cluster.name == cluster_name}
         else
           clusters = Awsborn::ServerCluster.clusters
         end
