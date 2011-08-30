@@ -109,7 +109,8 @@ module Awsborn
 
           balancers.each do |balancer|
             desc = balancer.description
-            puts "Balancer: %s -- %s -- %s" % [balancer.name, balancer.dns_alias, desc[:availability_zones].join(' ')]
+            instances = desc[:instances].any? ? desc[:instances].join(', ') : 'None'
+            puts "Balancer: %s -- %s -- %s -- Instances: %s" % [balancer.name, balancer.dns_alias, desc[:availability_zones].join(', '), instances]
           end
 
           max_name_length = servers.map { |server| server.name.to_s.size }.max
