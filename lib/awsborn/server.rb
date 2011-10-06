@@ -211,7 +211,6 @@ module Awsborn
           logger.debug 'Looking up DNS name from volume ID'
           self.host_name = aws_dns_name
           logger.debug "got DNS name #{@host_name}"
-          update_known_hosts
         end
         @host_name
       end
