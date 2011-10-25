@@ -162,7 +162,7 @@ module Awsborn
     end
     
     def attach_volumes
-      logger.debug "Attaching volumes #{disk.values.join(', ')} to #{name}"
+      logger.debug "Attaching volumes #{disk.values.join(', ')} to #{name}" unless disk.empty?
       disk.each_pair do |device, str_or_ary|
         volume = str_or_ary.is_a?(Array) ? str_or_ary.first : str_or_ary
         device = "/dev/#{device}" if device.is_a?(Symbol) || ! device.match('/')
@@ -218,7 +218,7 @@ module Awsborn
         @options[:zone]
       end
       def disk
-        @options[:disk]
+        @options[:disk] || {}
       end
       def disk_volume_ids
         disk.values.map { |str_or_ary| str_or_ary.is_a?(Array) ? str_or_ary.first : str_or_ary }
