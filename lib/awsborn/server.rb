@@ -309,7 +309,8 @@ module Awsborn
         @describe_instance ||= ec2.describe_instance
       end
       def cluster_name
-        ServerCluster.cluster_for(self).name
+        cluster = ServerCluster.cluster_for(self)
+        cluster ? cluster.name : "<unknown>"
       end
       def full_name
         "#{self.class.name}/#{cluster_name}/#{name}"

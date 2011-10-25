@@ -148,6 +148,7 @@ describe Awsborn::Server do
         image_id.should == 'ami-2fc2e95b'
         options[:group_ids].should == ['Common', 'Other', 'SecureServer sample']
       end
+      ec2.stub!(:set_instance_name)
       ec2.should_receive(:create_security_group_if_missing).exactly(3).times
       @server.stub(:ec2).and_return(ec2)
       @server.should_receive(:instance_running?).and_return(true)

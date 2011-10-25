@@ -18,6 +18,7 @@ module Awsborn
       clusters.each do |cluster|
         return cluster if cluster.detect { |i| i == instance }
       end
+      nil
     end
 
     def self.next_name
