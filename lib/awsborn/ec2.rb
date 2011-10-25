@@ -95,5 +95,10 @@ module Awsborn
       end
     end
 
+    def set_instance_name (name)
+      raise "Instance hasn't been launched yet" unless instance_id
+      connection.create_tags(instance_id, {"Name" => name})
+    end
+
   end
 end

@@ -115,6 +115,8 @@ module Awsborn
       )
       logger.debug @launch_response
 
+      ec2.set_instance_name full_name
+
       Awsborn.wait_for("instance #{instance_id} (#{name}) to start", 10) { instance_running? }
       self.host_name = aws_dns_name
     end
@@ -293,6 +295,9 @@ module Awsborn
       end
       def cluster_name
         ServerCluster.cluster_for(self).name
+      end
+      def full_name
+        "#{self.class.name}/#{cluster_name}/#{name}"
       end
     end
 
