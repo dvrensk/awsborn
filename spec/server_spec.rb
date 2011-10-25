@@ -47,6 +47,75 @@ describe Awsborn::Server do
     end
   end
 
+  describe "running?" do
+    it "first tries to set instance_id using find_instance_id_by_name" do
+      @server.stub!(:find_instance_id_by_name).and_return("i-1234")
+      @server.ec2.should_receive(:instance_id=).with("i-1234")
+      @server.running?
+    end
+    it "defaults back to using find_instance_by_volume" do
+      @server.stub!(:find_instance_id_by_name).and_return(nil)
+      @server.stub!(:find_instance_id_by_volume).and_return("i-2345")
+      @server.ec2.should_receive(:instance_id=).with("i-2345")
+      @server.running?
+    end
+    it "returns the value that instance_id was set to" do
+      @server.stub!(:find_instance_id_by_name).and_return("i-1234")
+      @server.running?.should == "i-1234"
+    end
+  end
+
+  describe "#find_instance_id_by_volume" do
+    it "returns the instance id of the (hopefully unique) instance to which all defined disks are attached" do
+      @server.stub!(:disk_volume_ids).and_return(["volume_id_1", "volume_id_2"])
+      @server.ec2.stub!(:instance_id_for_volume).and_return("i-123")
+      @server.find_instance_id_by_volume.should == "i-123"
+    end
+
+    it "returns nil if no instance was found" do
+      @server.stub!(:disk_volume_ids).and_return([])
+      @server.find_instance_id_by_volume.should be_nil
+    end
+
+    it "raises a ServerError if multiple instances were found" do
+      @server.stub!(:disk_volume_ids).and_return(["volume_id_1", "volume_id_2"])
+      @server.ec2.stub!(:instance_id_for_volume).and_return do |vol_id|
+        {"volume_id_1" => "i-1",
+         "volume_id_2" => "i-2"}[vol_id]
+      end
+      expect {@server.find_instance_id_by_volume}.to raise_error(Awsborn::ServerError)
+    end
+  end
+
+  describe "#find_instance_id_by_name" do
+    before do
+      @connection = mock("connection")
+      @server.stub!(:full_name).and_return "fyllenamn"
+      @server.ec2.stub!(:connection).and_return @connection
+    end
+
+    it "returns the instance id of the (hopefully unique) pending or running instance with the correct name" do
+      instance = {:aws_instance_id => "i-1234"}
+      @connection.should_receive(:describe_instances).
+          with(:filters => {
+                'tag:Name' => "fyllenamn",
+                'instance-state-name' => ['pending', 'running']
+               }).
+          and_return [instance]
+      @server.find_instance_id_by_name.should == "i-1234"
+    end
+
+    it "returns nil if no instance was found" do
+      @connection.stub!(:describe_instances).and_return []
+      @server.find_instance_id_by_name.should be_nil
+    end
+
+    it "raises an exception if too many instances were found" do
+      @connection.stub!(:describe_instances).and_return ["too", "many"]
+      expect {@server.find_instance_id_by_name}.to raise_error(Awsborn::ServerError)
+    end
+  end
+
   # TODO
   # context "first of all" do
   #   it "should have a connection to the EU service point"

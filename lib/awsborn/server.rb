@@ -59,14 +59,29 @@ module Awsborn
       end
     end
 
-    def running?
+    def find_instance_id_by_name
+      instances = ec2.connection.describe_instances(
+        :filters => {'tag:Name' => full_name,
+                     'instance-state-name' => ['pending', 'running']}
+      )
+      if instances.count > 1
+        raise ServerError, "Found multiple instances with full_name = #{full_name}."
+      end
+      instances.empty? ? nil : instances.first[:aws_instance_id]
+    end
+
+    def find_instance_id_by_volume
       map = {}
       disk_volume_ids.each { |vol_id| map[vol_id] = ec2.instance_id_for_volume(vol_id) }
       ids = map.values.uniq
       if ids.size > 1
         raise ServerError, "Volumes for #{self.class.name}:#{name} are connected to several instances: #{map.inspect}"
       end
-      ec2.instance_id = ids.first
+      ids.first
+    end
+
+    def running?
+      ec2.instance_id = find_instance_id_by_name || find_instance_id_by_volume
     end
 
     def refresh
