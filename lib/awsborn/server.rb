@@ -126,7 +126,8 @@ module Awsborn
         :availability_zone => symbol_to_aws_zone(zone),
         :key_name => key_pair.name,
         :group_ids => security_group,
-        :monitoring_enabled => monitor
+        :monitoring_enabled => monitor,
+        :user_data => user_data
       )
       logger.debug @launch_response
 
@@ -314,6 +315,9 @@ module Awsborn
       end
       def full_name
         "#{self.class.name}/#{cluster_name}/#{name}"
+      end
+      def user_data
+        '' # Likely overridden in subclass
       end
     end
 
