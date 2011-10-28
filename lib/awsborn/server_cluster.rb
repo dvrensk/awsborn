@@ -25,7 +25,7 @@ module Awsborn
       @next_name_counter ||= 1
       old_names = clusters.map { |c| c.name }
       begin
-        next_name = "cluster #{@next_name_counter}"
+        next_name = "cluster#{@next_name_counter}"
         @next_name_counter += 1
       end while old_names.include?(next_name)
       next_name
