@@ -321,7 +321,7 @@ module Awsborn
         cluster ? cluster.name : "<unknown>"
       end
       def full_name
-        "#{self.class.name}/#{cluster_name}/#{name}"
+        "#{self.class.name.downcase}-#{cluster_name}-#{name}"
       end
       def user_data
         '' # Likely overridden in subclass
