@@ -81,7 +81,14 @@ module Awsborn
     end
 
     def running?
-      ec2.instance_id = find_instance_id_by_name || find_instance_id_by_volume
+      name_id = find_instance_id_by_name
+      volume_id = find_instance_id_by_volume
+
+      if name_id && volume_id && name_id != volume_id
+        raise ServerError, "Volumes #{disk_volume_ids} are attached to #{volume_id}, not to instance #{name_id} with name #{full_name}"
+      else
+        ec2.instance_id = name_id || volume_id
+      end
     end
 
     def refresh

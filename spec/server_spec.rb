@@ -50,6 +50,7 @@ describe Awsborn::Server do
   describe "running?" do
     it "first tries to set instance_id using find_instance_id_by_name" do
       @server.stub!(:find_instance_id_by_name).and_return("i-1234")
+      @server.stub!(:find_instance_id_by_volume).and_return(nil)
       @server.ec2.should_receive(:instance_id=).with("i-1234")
       @server.running?
     end
@@ -61,7 +62,13 @@ describe Awsborn::Server do
     end
     it "returns the value that instance_id was set to" do
       @server.stub!(:find_instance_id_by_name).and_return("i-1234")
+      @server.stub!(:find_instance_id_by_volume).and_return(nil)
       @server.running?.should == "i-1234"
+    end
+    it "raises a ServerError if find_instance_id_by_name and find_instance_id_by_volume doesn't match" do
+      @server.stub!(:find_instance_id_by_name).and_return("i-1234")
+      @server.stub!(:find_instance_id_by_volume).and_return("i-2345")
+      expect {@server.running?}.to raise_error(Awsborn::ServerError)
     end
   end
 
