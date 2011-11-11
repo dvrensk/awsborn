@@ -1,0 +1,8 @@
+To release a gem
+----------------
+
+1. Commit everything, make sure that your working directory is clean
+2. Decide on what the new version number will be
+3. Update documentation and changes in README.mdown
+4. rake version:bump:{major,minor,patch}
+5. rake release
