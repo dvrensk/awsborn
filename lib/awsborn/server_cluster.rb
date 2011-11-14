@@ -60,7 +60,8 @@ module Awsborn
       running, missing = requested.partition { |e| e.running? }
       refresh_running(running) if running.any?
       start_missing_instances(missing) if missing.any?
-      update_load_balancing(running) unless @load_balancers.empty?
+      all_running = @instances.select{ |i| i.running? }
+      update_load_balancing(all_running) unless @load_balancers.empty?
     end
 
     def refresh_running (instances)
