@@ -166,7 +166,7 @@ EOH
       end
 
       def cluster (args) #:nodoc:
-        name = args[:c] || args[:cluster] || 'cluster 1'
+        name = args[:c] || args[:cluster] || 'cluster1'
         Awsborn::ServerCluster.clusters.detect { |c| c.name == name } || raise("Could not find cluster named '#{name}'")
       end
 
