@@ -32,8 +32,6 @@ RSpec::Core::RakeTask.new(:rcov) do |t|
   t.rcov_opts =  %q[--exclude "spec"]
 end
 
-task :spec => :check_dependencies
-
 task :default => :spec
 
 require 'rake/rdoctask'
