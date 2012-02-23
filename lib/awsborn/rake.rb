@@ -16,6 +16,8 @@ module Awsborn
     # You can use `server=name1,name2` as a synonym for `host=...`
     #
     module Rake
+      # Compatibility with 0.8.7 & 0.9.2.2
+      extend ::Rake::DSL rescue nil
 
       desc "Default: Start all servers (if needed) and deploy with chef."
       task :all => [:start, "chef:run"]
