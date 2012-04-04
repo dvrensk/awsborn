@@ -7,9 +7,17 @@ module Awsborn
       @options = options.dup
       self.host_name = elastic_ip
     end
-    
+
     class << self
       attr_accessor :logger
+
+      def get_class_attr(class_attr)
+        if (class_var = instance_variable_get("@#{class_attr}"))
+          class_var
+        elsif self != ::Awsborn::Server
+          superclass.send(class_attr)
+        end 
+      end
 
       # Set image_id.  Examples:
       #   image_id 'ami-123123'
@@ -20,35 +28,35 @@ module Awsborn
           @image_id = args.first
           @sudo_user = args.last[:sudo_user] if args.last.is_a?(Hash)
         end
-        @image_id
+        get_class_attr(:image_id)
       end
       def instance_type (*args)
         @instance_type = args.first unless args.empty?
-        @instance_type
+        get_class_attr(:instance_type)
       end
       def security_group (*args)
         @security_group = args unless args.empty?
-        @security_group
+        get_class_attr(:security_group)
       end
       def individual_security_group (*args)
         @individual_security_group = args.first unless args.empty?
-        @individual_security_group
+        get_class_attr(:individual_security_group)
       end
       def keys (*args)
         @keys = args unless args.empty?
-        @keys
+        get_class_attr(:keys)
       end
       def sudo_user (*args)
         @sudo_user = args.first unless args.empty?
-        @sudo_user
+        get_class_attr(:sudo_user)
       end
       def bootstrap_script (*args)
         @bootstrap_script = args.first unless args.empty?
-        @bootstrap_script
+        get_class_attr(:bootstrap_script)
       end
       def monitor (*args)
         @monitor = args.first unless args.empty?
-        @monitor
+        get_class_attr(:monitor)
       end
       
       def cluster (name = ServerCluster.next_name, &block)
