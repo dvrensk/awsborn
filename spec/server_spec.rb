@@ -11,26 +11,6 @@ class BigAndSmallServer < Awsborn::Server
   image_id :x64 => 'ami-big', :i386 => 'ami-small'
 end
 
-class AmiTest < SampleServer
-  security_group   'Basic web'
-  keys             '../common/keys/*'
-  bootstrap_script '../common/chef-bootstrap.sh'
-  monitor          false
-
-  cluster do
-    server :x64,  :zone => :eu_west_1b, :instance_type => :m1_small
-  end
-
-  def chef_dna
-    {
-    }
-  end
-
-  def keychain
-    @keychain ||= Awsborn::Keychain.new(File.expand_path('../etc/releware.keychain'))
-  end
-end
-
 describe Awsborn::Server do
   before(:each) do
     Awsborn.verbose = false
