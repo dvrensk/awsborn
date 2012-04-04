@@ -16,7 +16,9 @@ module Awsborn
           class_var
         elsif self != ::Awsborn::Server
           superclass.send(class_attr)
-        end 
+        else
+          nil
+        end
       end
 
       # Set image_id.  Examples:
