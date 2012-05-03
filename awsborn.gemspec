@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{awsborn}
-  s.version = "0.9.6"
+  s.version = "0.9.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["David Vrensk", "Jean-Louis Giordano"]
-  s.date = %q{2012-04-04}
+  s.date = %q{2012-05-03}
   s.description = %q{Awsborn lets you define and launch a server cluster on Amazon EC2.}
   s.email = %q{david@icehouse.se}
   s.extra_rdoc_files = [
