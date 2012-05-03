@@ -49,7 +49,7 @@ module Awsborn
     def get_console_fingerprint
       # ec2: -----BEGIN SSH HOST KEY FINGERPRINTS-----
       # ec2: 2048 7a:e9:eb:41:b7:45:b1:07:30:ad:13:c5:a9:2a:a1:e5 /etc/ssh/ssh_host_rsa_key.pub (RSA)
-      regexp = %r{BEGIN SSH HOST KEY FINGERPRINTS.*((?:[0-9a-f]{2}:){15}[0-9a-f]{2}) /etc/ssh/ssh_host_rsa_key.pub }m
+      regexp = %r{BEGIN SSH HOST KEY FINGERPRINTS.*((?:[0-9a-f]{2}:){15}[0-9a-f]{2})[ \t]+\S+[ \t]+\(RSA\)}m
       @console_fingerprint = Awsborn.wait_for "console output", 15, 420 do
         console = ec2.get_console_output
         unless console.empty?
