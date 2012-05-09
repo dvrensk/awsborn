@@ -92,7 +92,7 @@ module Awsborn
         # Disable annoying "Waiting for console output.."
         Awsborn.verbose = false
 
-        cluster_name = cluster_param
+        cluster_name = cluster_param(args)
         if cluster_name
           clusters = Awsborn::ServerCluster.clusters.select {|cluster| cluster.name == cluster_name}
         else
@@ -160,7 +160,7 @@ EOH
       end
 
       def get_hosts (args) #:nodoc:
-        host_param && host_param.split(',')
+        host_param(args) && host_param(args).split(',')
       end
 
       def framed (message) #:nodoc:
@@ -168,15 +168,15 @@ EOH
       end
 
       def cluster (args) #:nodoc:
-        name = cluster_param || 'cluster1'
+        name = cluster_param(args) || 'cluster1'
         Awsborn::ServerCluster.clusters.detect { |c| c.name == name } || raise("Could not find cluster named '#{name}'")
       end
 
-      def host_param
+      def host_param(args)
         args[:host] || args[:server] || ENV['host'] || ENV['server']
       end
 
-      def cluster_param
+      def cluster_param(args)
         args[:c] || args[:cluster] || ENV['c'] || ENV['cluster']
       end
 
