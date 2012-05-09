@@ -75,7 +75,7 @@ module Awsborn
           Dir["**/*.rb"].each do |recipe|
             RakeFileUtils.verbose(false) do
               sh %{ruby -c #{recipe} > /dev/null} do |ok, res|
-                raise "Syntax error in #{recipe}" if not ok 
+                raise "Syntax error in #{recipe}" if not ok
               end
             end
           end
@@ -140,12 +140,12 @@ module Awsborn
       def create_cookbook(dir) #:nodoc:
         raise "Must provide a cookbook=" unless ENV["cookbook"]
         puts "** Creating cookbook #{ENV["cookbook"]}"
-        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "attributes")}" 
-        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "recipes")}" 
-        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "definitions")}" 
-        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "libraries")}" 
-        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "files", "default")}" 
-        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "templates", "default")}" 
+        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "attributes")}"
+        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "recipes")}"
+        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "definitions")}"
+        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "libraries")}"
+        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "files", "default")}"
+        sh "mkdir -p #{File.join(dir, ENV["cookbook"], "templates", "default")}"
 
         unless File.exists?(File.join(dir, ENV["cookbook"], "recipes", "default.rb"))
           open(File.join(dir, ENV["cookbook"], "recipes", "default.rb"), "w") do |file|
