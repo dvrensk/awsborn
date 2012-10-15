@@ -19,7 +19,7 @@ module Awsborn
           @secret_access_key = secret_access_key_from_keychain(access_key_id)
         end
       end
-      @secret_access_key
+      @secret_access_key.to_s
     end
 
     def secret_access_key_from_keychain (key_id)
