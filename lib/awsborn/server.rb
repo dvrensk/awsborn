@@ -219,7 +219,7 @@ module Awsborn
       File.symlink(cookbooks_dir, 'cookbooks') if temp_link
 
       File.open("config/dna.json", "w") { |f| f.write(chef_dna.to_json) }
-      system "rsync -rL --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
+      system "rsync -rL --chmod=o-rw -p --delete --exclude '.*' ./ root@#{host_name}:#{Awsborn.remote_chef_path}"
     ensure
       FileUtils.rm_f("config/dna.json")
       File.delete("cookbooks") if temp_link
