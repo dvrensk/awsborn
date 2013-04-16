@@ -60,7 +60,7 @@ module Awsborn
         @monitor = args.first unless args.empty?
         get_class_attr(:monitor)
       end
-      
+
       def cluster (name = ServerCluster.next_name, &block)
         ServerCluster.build(self, name, &block)
       end
@@ -104,7 +104,7 @@ module Awsborn
     def refresh
       start_or_stop_monitoring unless monitor.nil?
       associate_address if elastic_ip
-      
+
       begin
         update_known_hosts
         install_ssh_keys if keys
@@ -113,7 +113,7 @@ module Awsborn
         logger.warn e
       end
     end
-    
+
     def start_or_stop_monitoring
       if monitor && ! ec2.monitoring?
         ec2.monitor
@@ -121,7 +121,7 @@ module Awsborn
         ec2.unmonitor
       end
     end
-    
+
     def start (key_pair)
       launch_instance(key_pair)
 
@@ -157,11 +157,11 @@ module Awsborn
     def update_known_hosts
       KnownHostsUpdater.update_for_server self
     end
-    
+
     def install_ssh_keys (temp_key_pair = nil)
       logger.debug "Installing ssh keys on #{name}"
       raise ArgumentError, "No host_name for #{name}" unless host_name
-      install_ssh_keys_for_sudo_user_or_root (temp_key_pair)
+      install_ssh_keys_for_sudo_user_or_root(temp_key_pair)
       copy_sudo_users_keys_to_root if sudo_user
     end
 
@@ -171,7 +171,7 @@ module Awsborn
         pipe.puts key_data
       end
     end
-    
+
     def key_data
       Dir[*keys].inject([]) do |memo, file_name|
         memo + File.readlines(file_name).map { |line| line.chomp }
@@ -195,7 +195,7 @@ module Awsborn
       system "scp #{script} root@#{host_name}:/tmp"
       system "ssh root@#{host_name} 'cd /tmp && chmod 700 #{basename} && ./#{basename}'"
     end
-    
+
     def attach_volumes
       logger.debug "Attaching volumes #{disk.values.join(', ')} to #{name}" unless disk.empty?
       disk.each_pair do |device, str_or_ary|
@@ -234,7 +234,7 @@ module Awsborn
     def ec2
       @ec2 ||= Ec2.new(zone)
     end
-    
+
     begin :accessors
       attr_accessor :name, :logger
       def host_name= (string)
@@ -341,7 +341,6 @@ module Awsborn
     def logger
       @logger ||= self.class.logger
     end
-    
+
   end
 end
-

@@ -94,7 +94,7 @@ module Awsborn
     def delete_key_pair (instances)
       instances.first.ec2.delete_key_pair(@key_pair)
     end
-    
+
     def each (&block)
       @instances.each &block
     end
@@ -102,9 +102,9 @@ module Awsborn
     def [] (name)
       @instances.detect { |i| i.name == name }
     end
-    
+
     protected
-    
+
     def add_domain_to_ip (hash)
       add_domain_to_key(:ip, hash)
     end
@@ -119,6 +119,6 @@ module Awsborn
         hash
       end
     end
-    
+
   end
 end
